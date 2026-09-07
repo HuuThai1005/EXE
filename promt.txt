@@ -1,0 +1,2390 @@
+Bạn là một Senior Full-stack Engineer, Software Architect, UI/UX Designer và Security Engineer.
+
+Hãy xây dựng một MVP full-stack cho startup sinh viên FPT có tên:
+
+MEKONG STORY BOX
+
+Tagline:
+
+“Một chuyến về miền Tây, nằm trong một chiếc hộp.”
+
+============================================================
+1. TỔNG QUAN SẢN PHẨM
+============================================================
+
+Mekong Story Box là một Cultural Experience Platform kết hợp:
+
+Physical Product
++
+Digital Cultural Experience
++
+Storytelling
++
+Gamification
++
+Digital Passport
++
+QR Technology
+
+Sản phẩm KHÔNG chỉ là một hộp đặc sản.
+
+Story Box là một “chuyến du lịch miền Tây thu nhỏ”.
+
+Ví dụ:
+
+MEKONG STORY BOX — CẦN THƠ #001
+
+Bên trong hộp:
+
+- Cần Thơ Postcard
+- Mekong Map
+- Local Snack
+- Handmade Souvenir
+- Cultural Story Card
+- Digital Passport Card
+
+Người dùng:
+
+Mua Story Box
+↓
+Nhận hộp
+↓
+Scan QR
+↓
+Mở website
+↓
+Khám phá câu chuyện văn hóa
+↓
+Làm mini quiz
+↓
+Nhận điểm
+↓
+Unlock Badge
+↓
+Cập nhật Digital Passport
+↓
+Tiếp tục khám phá các địa phương khác.
+
+Website là thế giới kỹ thuật số phía sau chiếc hộp.
+
+QR là cầu nối Physical → Digital.
+
+Digital Passport là cơ chế gamification và retention.
+
+Cultural Stories là content engine.
+
+============================================================
+2. MỤC TIÊU MVP
+============================================================
+
+MVP phải chứng minh 3 giả thuyết:
+
+1. Người dùng thích trải nghiệm văn hóa miền Tây theo cách interactive.
+2. Người dùng có nhu cầu mua Story Box.
+3. Trải nghiệm Physical + Digital tạo ra sự khác biệt so với website bán đặc sản thông thường.
+
+MVP phải có thể:
+
+- Demo trực tiếp trước giảng viên.
+- Chạy local.
+- Kết nối database thật.
+- Có REST API thật.
+- Có authentication.
+- Có QR verification.
+- Có Digital Passport.
+- Có gamification.
+- Có cart và order.
+- Có admin dashboard cơ bản.
+
+Không xây hệ thống quá lớn.
+
+Ưu tiên:
+
+1. Chạy được.
+2. UX tốt.
+3. Security tốt.
+4. Architecture rõ ràng.
+5. Visual đẹp.
+6. Có khả năng mở rộng.
+
+============================================================
+3. TARGET USERS
+============================================================
+
+PRIMARY USERS:
+
+- Gen Z Việt Nam
+- Sinh viên
+- Người thích du lịch
+- Người quan tâm văn hóa miền Tây
+
+SECONDARY USERS:
+
+- Khách du lịch quốc tế
+- Người nước ngoài sống tại Việt Nam
+- Người Việt ở nước ngoài
+- Người muốn mua quà văn hóa Việt Nam
+
+Website hỗ trợ:
+
+Vietnamese
+English
+
+Có language switch:
+
+VI | EN
+
+============================================================
+4. BRAND POSITIONING
+============================================================
+
+Brand:
+
+MEKONG STORY BOX
+
+Tagline:
+
+“Một chuyến về miền Tây, nằm trong một chiếc hộp.”
+
+English:
+
+“A journey through the Mekong Delta, inside a box.”
+
+Core message:
+
+“Bạn không mua một chiếc hộp.
+Bạn mua một câu chuyện.”
+
+Không định vị là:
+
+- Website bán đặc sản.
+- Website du lịch truyền thống.
+- Website thương mại điện tử generic.
+
+Định vị là:
+
+CULTURAL EXPERIENCE PLATFORM
+
+============================================================
+5. DESIGN DIRECTION
+============================================================
+
+Phong cách:
+
+Modern Mekong
+Premium
+Warm
+Cultural
+Youthful
+Story-driven
+Authentic
+
+Lấy cảm hứng từ:
+
+- Mekong River
+- Floating Market
+- Wooden Boat
+- Coconut
+- Lotus
+- Postcard
+- Stamp
+- Handmade Paper
+- River Map
+- Southern Vietnam typography
+
+Màu sắc gợi ý:
+
+Deep Green
+Mekong Blue
+Warm Beige
+Terracotta
+Off White
+
+Không lạm dụng gradient.
+
+Không sử dụng thiết kế quá “quê”.
+
+Không sử dụng quá nhiều icon minh họa generic.
+
+Thiết kế phải giống một startup lifestyle/cultural brand hiện đại.
+
+============================================================
+6. TECH STACK BẮT BUỘC
+============================================================
+
+FRONTEND:
+
+- React
+- TypeScript
+- Vite
+- React Router
+- Tailwind CSS
+- Axios
+- Framer Motion
+- Lucide React
+
+BACKEND:
+
+- Java 21+
+- Spring Boot 3+
+- Spring Web
+- Spring Data JPA
+- Hibernate
+- Spring Security
+- JWT
+- Bean Validation
+- Lombok nếu phù hợp
+- Flyway
+
+DATABASE:
+
+- Microsoft SQL Server
+- SQL Server 2022 hoặc tương thích
+- Microsoft JDBC Driver for SQL Server
+
+API DOCUMENTATION:
+
+- Springdoc OpenAPI / Swagger
+
+TESTING:
+
+- JUnit
+- Mockito
+- Spring Boot Test
+
+OPTIONAL:
+
+- Docker
+- Docker Compose
+
+KHÔNG sử dụng:
+
+- PostgreSQL
+- MySQL
+- MongoDB
+- Firebase làm database chính
+- Node.js/Express làm backend
+- Next.js làm frontend
+
+============================================================
+7. SYSTEM ARCHITECTURE
+============================================================
+
+Architecture:
+
+React Frontend
+        |
+        | HTTPS / REST API / JSON
+        ↓
+Spring Boot Backend
+        |
+        ├── Controller
+        ├── DTO
+        ├── Service
+        ├── Repository
+        ├── Spring Security
+        ├── JWT
+        ├── QR Verification
+        ├── Validation
+        ├── Audit Logging
+        └── Analytics
+                |
+                ↓
+        Microsoft SQL Server
+
+Database migration:
+
+Flyway
+        |
+        ↓
+Microsoft SQL Server
+
+Không viết business logic trong Controller.
+
+Controller
+→ Service
+→ Repository
+
+Không expose Entity trực tiếp ra API.
+
+Sử dụng DTO.
+
+============================================================
+8. FRONTEND STRUCTURE
+============================================================
+
+Tạo cấu trúc:
+
+src/
+
+  assets/
+
+  components/
+    common/
+    layout/
+    product/
+    story/
+    passport/
+    qr/
+    quiz/
+    admin/
+
+  pages/
+    Home/
+    StoryBox/
+    StoryBoxDetail/
+    Experience/
+    QRExperience/
+    Stories/
+    StoryDetail/
+    Passport/
+    Cart/
+    Checkout/
+    Login/
+    Register/
+    About/
+    Admin/
+
+  services/
+    api.ts
+    authService.ts
+    productService.ts
+    storyService.ts
+    locationService.ts
+    passportService.ts
+    qrService.ts
+    cartService.ts
+    orderService.ts
+    analyticsService.ts
+
+  hooks/
+
+  contexts/
+    AuthContext.tsx
+    LanguageContext.tsx
+    CartContext.tsx
+
+  types/
+
+  utils/
+
+  routes/
+
+============================================================
+9. BACKEND STRUCTURE
+============================================================
+
+Package:
+
+com.mekongstorybox
+
+Structure:
+
+config/
+security/
+controller/
+service/
+repository/
+entity/
+dto/
+mapper/
+exception/
+validation/
+util/
+
+Security:
+
+security/
+    JwtAuthenticationFilter
+    JwtService
+    SecurityConfig
+    CustomUserDetailsService
+
+============================================================
+10. DATABASE
+============================================================
+
+Database:
+
+mekong_story_box
+
+Use Microsoft SQL Server.
+
+Tables:
+
+users
+roles
+user_roles
+products
+product_items
+stories
+locations
+badges
+user_badges
+digital_passports
+qr_tokens
+qr_scans
+quiz_questions
+quiz_answers
+quiz_attempts
+cart_items
+orders
+order_items
+analytics_events
+audit_logs
+
+============================================================
+11. DATABASE SCHEMA
+============================================================
+
+USERS
+
+id BIGINT IDENTITY PRIMARY KEY
+
+full_name NVARCHAR(150) NOT NULL
+
+email NVARCHAR(255) UNIQUE NOT NULL
+
+password_hash NVARCHAR(255) NOT NULL
+
+language NVARCHAR(10) DEFAULT 'vi'
+
+avatar_url NVARCHAR(500) NULL
+
+created_at DATETIME2 NOT NULL
+
+updated_at DATETIME2 NOT NULL
+
+
+ROLES
+
+id BIGINT IDENTITY PRIMARY KEY
+
+name NVARCHAR(50) UNIQUE NOT NULL
+
+
+USER_ROLES
+
+user_id BIGINT NOT NULL
+
+role_id BIGINT NOT NULL
+
+PRIMARY KEY(user_id, role_id)
+
+
+PRODUCTS
+
+id BIGINT IDENTITY PRIMARY KEY
+
+name NVARCHAR(255) NOT NULL
+
+slug NVARCHAR(255) UNIQUE NOT NULL
+
+description NVARCHAR(MAX)
+
+price DECIMAL(18,2)
+
+thumbnail_url NVARCHAR(500)
+
+status NVARCHAR(30)
+
+created_at DATETIME2
+
+updated_at DATETIME2
+
+
+PRODUCT_ITEMS
+
+id BIGINT IDENTITY PRIMARY KEY
+
+product_id BIGINT NOT NULL
+
+name NVARCHAR(255)
+
+description NVARCHAR(MAX)
+
+origin NVARCHAR(255)
+
+story NVARCHAR(MAX)
+
+image_url NVARCHAR(500)
+
+
+LOCATIONS
+
+id BIGINT IDENTITY PRIMARY KEY
+
+name NVARCHAR(255)
+
+slug NVARCHAR(255) UNIQUE
+
+description NVARCHAR(MAX)
+
+latitude DECIMAL(10,7) NULL
+
+longitude DECIMAL(10,7) NULL
+
+image_url NVARCHAR(500)
+
+
+STORIES
+
+id BIGINT IDENTITY PRIMARY KEY
+
+location_id BIGINT
+
+title NVARCHAR(255)
+
+slug NVARCHAR(255) UNIQUE
+
+summary NVARCHAR(1000)
+
+content NVARCHAR(MAX)
+
+category NVARCHAR(50)
+
+cover_image NVARCHAR(500)
+
+audio_url NVARCHAR(500) NULL
+
+reading_time INT
+
+created_at DATETIME2
+
+updated_at DATETIME2
+
+
+BADGES
+
+id BIGINT IDENTITY PRIMARY KEY
+
+name NVARCHAR(255)
+
+description NVARCHAR(1000)
+
+icon_url NVARCHAR(500)
+
+required_points INT
+
+
+USER_BADGES
+
+id BIGINT IDENTITY PRIMARY KEY
+
+user_id BIGINT
+
+badge_id BIGINT
+
+unlocked_at DATETIME2
+
+
+DIGITAL_PASSPORTS
+
+id BIGINT IDENTITY PRIMARY KEY
+
+user_id BIGINT UNIQUE
+
+total_points INT DEFAULT 0
+
+level INT DEFAULT 1
+
+created_at DATETIME2
+
+updated_at DATETIME2
+
+
+QR_TOKENS
+
+id BIGINT IDENTITY PRIMARY KEY
+
+token NVARCHAR(255) UNIQUE
+
+product_id BIGINT
+
+status NVARCHAR(30)
+
+created_at DATETIME2
+
+used_at DATETIME2 NULL
+
+expires_at DATETIME2 NULL
+
+
+QR_SCANS
+
+id BIGINT IDENTITY PRIMARY KEY
+
+qr_token_id BIGINT
+
+user_id BIGINT NULL
+
+scanned_at DATETIME2
+
+ip_address NVARCHAR(100) NULL
+
+user_agent NVARCHAR(500) NULL
+
+
+QUIZ_QUESTIONS
+
+id BIGINT IDENTITY PRIMARY KEY
+
+story_id BIGINT
+
+question NVARCHAR(MAX)
+
+points INT
+
+
+QUIZ_ANSWERS
+
+id BIGINT IDENTITY PRIMARY KEY
+
+question_id BIGINT
+
+answer_text NVARCHAR(MAX)
+
+is_correct BIT
+
+
+QUIZ_ATTEMPTS
+
+id BIGINT IDENTITY PRIMARY KEY
+
+user_id BIGINT
+
+question_id BIGINT
+
+selected_answer_id BIGINT
+
+is_correct BIT
+
+points_earned INT
+
+created_at DATETIME2
+
+
+CART_ITEMS
+
+id BIGINT IDENTITY PRIMARY KEY
+
+user_id BIGINT
+
+product_id BIGINT
+
+quantity INT
+
+
+ORDERS
+
+id BIGINT IDENTITY PRIMARY KEY
+
+user_id BIGINT
+
+order_code NVARCHAR(50) UNIQUE
+
+total_amount DECIMAL(18,2)
+
+status NVARCHAR(30)
+
+recipient_name NVARCHAR(150)
+
+phone NVARCHAR(30)
+
+shipping_address NVARCHAR(500)
+
+created_at DATETIME2
+
+updated_at DATETIME2
+
+
+ORDER_ITEMS
+
+id BIGINT IDENTITY PRIMARY KEY
+
+order_id BIGINT
+
+product_id BIGINT
+
+quantity INT
+
+unit_price DECIMAL(18,2)
+
+subtotal DECIMAL(18,2)
+
+
+ANALYTICS_EVENTS
+
+id BIGINT IDENTITY PRIMARY KEY
+
+user_id BIGINT NULL
+
+event_type NVARCHAR(50)
+
+entity_type NVARCHAR(50) NULL
+
+entity_id BIGINT NULL
+
+metadata NVARCHAR(MAX) NULL
+
+created_at DATETIME2
+
+
+AUDIT_LOGS
+
+id BIGINT IDENTITY PRIMARY KEY
+
+user_id BIGINT NULL
+
+action NVARCHAR(100)
+
+entity_type NVARCHAR(100)
+
+entity_id BIGINT NULL
+
+ip_address NVARCHAR(100) NULL
+
+created_at DATETIME2
+
+============================================================
+12. DATABASE MIGRATION
+============================================================
+
+Use Flyway.
+
+Do NOT rely on Hibernate auto schema update.
+
+Use:
+
+spring.jpa.hibernate.ddl-auto=validate
+
+Create migrations:
+
+V1__create_users_and_roles.sql
+
+V2__create_products.sql
+
+V3__create_locations_and_stories.sql
+
+V4__create_badges_and_passport.sql
+
+V5__create_qr_system.sql
+
+V6__create_quiz.sql
+
+V7__create_cart_and_orders.sql
+
+V8__create_analytics.sql
+
+V9__create_audit_logs.sql
+
+V10__insert_seed_data.sql
+
+All database changes must go through Flyway migrations.
+
+============================================================
+13. SPRING BOOT CONFIGURATION
+============================================================
+
+Use environment variables.
+
+Example:
+
+DB_HOST=localhost
+
+DB_PORT=1433
+
+DB_NAME=mekong_story_box
+
+DB_USERNAME=
+
+DB_PASSWORD=
+
+JWT_SECRET=
+
+JWT_EXPIRATION=
+
+Frontend:
+
+VITE_API_BASE_URL=http://localhost:8080/api
+
+SQL Server connection:
+
+jdbc:sqlserver://${DB_HOST}:${DB_PORT};databaseName=${DB_NAME};encrypt=true;trustServerCertificate=true
+
+Driver:
+
+com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+Do NOT hard-code:
+
+- Database password
+- JWT secret
+- API keys
+- Production credentials
+
+Create:
+
+.env.example
+
+============================================================
+14. AUTHENTICATION
+============================================================
+
+Implement:
+
+POST /api/auth/register
+
+POST /api/auth/login
+
+GET /api/auth/me
+
+POST /api/auth/refresh
+
+Use Spring Security + JWT.
+
+Password:
+
+BCrypt.
+
+JWT:
+
+- Signed token
+- Expiration
+- User ID
+- Roles
+
+Frontend stores authentication securely.
+
+Do not expose password.
+
+============================================================
+15. AUTHORIZATION
+============================================================
+
+Roles:
+
+USER
+
+ADMIN
+
+Public APIs:
+
+GET /api/products
+
+GET /api/products/{id}
+
+GET /api/stories
+
+GET /api/stories/{id}
+
+GET /api/locations
+
+GET /api/locations/{id}
+
+GET /api/badges
+
+
+Authenticated:
+
+GET /api/passport
+
+POST /api/passport/claim
+
+GET /api/cart
+
+POST /api/cart/items
+
+PUT /api/cart/items/{id}
+
+DELETE /api/cart/items/{id}
+
+POST /api/orders
+
+GET /api/orders
+
+
+ADMIN:
+
+POST /api/admin/products
+
+PUT /api/admin/products/{id}
+
+DELETE /api/admin/products/{id}
+
+POST /api/admin/stories
+
+PUT /api/admin/stories/{id}
+
+DELETE /api/admin/stories/{id}
+
+GET /api/admin/orders
+
+GET /api/admin/analytics
+
+GET /api/admin/qr
+
+POST /api/admin/qr
+
+Backend MUST enforce authorization.
+
+Do not rely only on hiding frontend buttons.
+
+============================================================
+16. HOMEPAGE
+============================================================
+
+Create modern premium homepage.
+
+Hero:
+
+“Một chuyến về miền Tây,
+nằm trong một chiếc hộp.”
+
+Subheadline:
+
+“Khám phá hương vị, câu chuyện và ký ức miền sông nước — theo một cách hoàn toàn mới.”
+
+CTA:
+
+[Khám phá Story Box]
+
+[Trải nghiệm miền Tây]
+
+Hero visual:
+
+Mekong Story Box.
+
+Background inspired by Mekong Delta.
+
+Use subtle animation.
+
+============================================================
+17. “WHAT IS STORY BOX?”
+============================================================
+
+Section title:
+
+“Bạn không mua một chiếc hộp.
+Bạn mua một câu chuyện.”
+
+3 steps:
+
+01 — UNBOX
+
+Mở hộp và khám phá những món quà từ miền Tây.
+
+02 — SCAN
+
+Quét QR để bước vào trải nghiệm số.
+
+03 — DISCOVER
+
+Khám phá câu chuyện, con người và địa điểm phía sau từng món quà.
+
+Use interactive cards.
+
+============================================================
+18. FEATURED PRODUCT
+============================================================
+
+Product:
+
+MEKONG STORY BOX
+CẦN THƠ #001
+
+Price:
+
+299.000 VNĐ
+
+Description:
+
+“Câu chuyện về một miền sông nước nơi những chuyến ghe bắt đầu từ lúc bình minh.”
+
+Display:
+
+- Product image
+- Price
+- Description
+- Items inside
+- Cultural story
+- Digital experience
+- Add to cart
+
+============================================================
+19. PRODUCT DETAIL
+============================================================
+
+Route:
+
+/story-box/can-tho
+
+Sections:
+
+Hero
+
+Product gallery
+
+Description
+
+What's inside
+
+Cultural stories
+
+Digital experience preview
+
+Reviews
+
+Price
+
+Quantity
+
+Add to cart
+
+Buy now
+
+CTA:
+
+“Bắt đầu hành trình — 299.000đ”
+
+============================================================
+20. INSIDE THE BOX
+============================================================
+
+Items:
+
+1. Cần Thơ Postcard
+2. Mekong Map
+3. Local Snack
+4. Handmade Souvenir
+5. Cultural Story Card
+6. Digital Passport Card
+
+Each item:
+
+- Name
+- Origin
+- Description
+- Story
+- Image
+
+Click item → modal.
+
+============================================================
+21. CULTURAL STORIES
+============================================================
+
+Route:
+
+/stories
+
+Categories:
+
+FOOD
+
+PEOPLE
+
+PLACES
+
+CRAFTS
+
+MUSIC
+
+LIFESTYLE
+
+Stories:
+
+“Vì sao chợ nổi bắt đầu từ lúc bình minh?”
+
+“Câu chuyện phía sau cây dừa Bến Tre”
+
+“Đờn ca tài tử — âm thanh của miền Nam”
+
+“Một ngày ở miệt vườn”
+
+API:
+
+GET /api/stories
+
+GET /api/stories/{id}
+
+GET /api/stories?category=FOOD
+
+============================================================
+22. STORY DETAIL
+============================================================
+
+Route:
+
+/stories/{slug}
+
+Display:
+
+- Cover
+- Title
+- Summary
+- Reading time
+- Content
+- Audio
+- Location
+- Related Story Box
+- Quiz
+
+Do not return correct quiz answers in public API response.
+
+============================================================
+23. MEKONG MAP
+============================================================
+
+Create interactive Mekong Delta map.
+
+Locations:
+
+Cần Thơ
+
+Bến Tre
+
+Đồng Tháp
+
+An Giang
+
+Sóc Trăng
+
+Kiên Giang
+
+Use SVG illustration.
+
+No real GPS required for MVP.
+
+Click location:
+
+→ cultural highlight
+→ stories
+→ related Story Box
+
+============================================================
+24. DIGITAL EXPERIENCE
+============================================================
+
+Route:
+
+/experience
+
+Message:
+
+“Chiếc hộp chỉ là điểm bắt đầu.”
+
+Experience flow:
+
+Scan QR
+
+↓
+
+Welcome
+
+↓
+
+Story
+
+↓
+
+Quiz
+
+↓
+
+Points
+
+↓
+
+Badge
+
+↓
+
+Digital Passport
+
+============================================================
+25. QR EXPERIENCE
+============================================================
+
+Route:
+
+/experience/qr/{token}
+
+Frontend calls:
+
+POST /api/qr/verify
+
+Backend validates token.
+
+Response:
+
+{
+  "valid": true,
+  "experienceId": "...",
+  "productId": "...",
+  "message": "Experience unlocked"
+}
+
+If invalid:
+
+Show:
+
+“QR code không hợp lệ hoặc đã bị vô hiệu hóa.”
+
+If valid:
+
+Show animation:
+
+“Your Mekong journey begins.”
+
+Then unlock story.
+
+============================================================
+26. QR SECURITY
+============================================================
+
+QR token MUST NOT be:
+
+/qr/1
+
+/qr/2
+
+/qr/3
+
+Use cryptographically unpredictable random tokens.
+
+Use:
+
+UUID or SecureRandom.
+
+QR status:
+
+ACTIVE
+
+USED
+
+REVOKED
+
+Optional:
+
+expiresAt
+
+Backend MUST verify:
+
+- Token exists
+- Token active
+- Token not expired
+- User allowed
+- Replay protection
+
+Frontend must NOT decide whether QR is valid.
+
+Backend decides.
+
+============================================================
+27. GAMIFICATION
+============================================================
+
+Points:
+
+QR scan:
++100
+
+Read story:
++20
+
+Complete quiz:
++50
+
+Complete location:
++150
+
+Backend calculates points.
+
+Never trust points sent by frontend.
+
+Example:
+
+POST /api/experience/{id}/complete
+
+Backend:
+
+- Validate experience
+- Check user
+- Check completion
+- Calculate points
+- Update passport
+- Unlock badge
+- Write analytics event
+
+Use transaction.
+
+Prevent duplicate rewards.
+
+============================================================
+28. QUIZ
+============================================================
+
+Example:
+
+Question:
+
+“Chợ nổi Cái Răng thường nhộn nhịp nhất vào thời điểm nào?”
+
+Answers:
+
+A. 12:00
+
+B. 5:00–7:00
+
+C. 15:00
+
+D. 22:00
+
+Backend validates answer.
+
+Correct answer must not be exposed in public story API.
+
+Prevent users from repeatedly farming points.
+
+============================================================
+29. DIGITAL PASSPORT
+============================================================
+
+Route:
+
+/passport
+
+Display:
+
+MEKONG EXPLORER
+
+Level 3
+
+1,250 Points
+
+Progress
+
+3 / 5 Stories
+
+Badges:
+
+🛶 Floating Market
+
+🌿 Mekong Garden
+
+🎵 Southern Music
+
+🍜 Mekong Cuisine
+
+Use stamp/postcard visual style.
+
+Passport should feel like a collectible travel passport.
+
+============================================================
+30. CART
+============================================================
+
+Route:
+
+/cart
+
+Functions:
+
+Add item
+
+Remove item
+
+Update quantity
+
+Calculate total
+
+Backend endpoints:
+
+GET /api/cart
+
+POST /api/cart/items
+
+PUT /api/cart/items/{id}
+
+DELETE /api/cart/items/{id}
+
+============================================================
+31. CHECKOUT
+============================================================
+
+Route:
+
+/checkout
+
+Fields:
+
+Full name
+
+Phone
+
+Address
+
+Order summary
+
+MVP does NOT require real payment integration.
+
+After submit:
+
+Create order.
+
+Display:
+
+“Đơn hàng của bạn đã được ghi nhận.”
+
+Payment integration can be TODO for future version.
+
+============================================================
+32. ADMIN DASHBOARD
+============================================================
+
+Route:
+
+/admin
+
+Only ADMIN.
+
+Dashboard:
+
+Total Users
+
+Total Orders
+
+Total Revenue
+
+Story Box Views
+
+QR Scans
+
+Passport Activations
+
+Story Completion Rate
+
+Product management.
+
+Story management.
+
+Location management.
+
+QR management.
+
+Order management.
+
+Analytics.
+
+============================================================
+33. ADMIN QR MANAGEMENT
+============================================================
+
+Admin can:
+
+Generate QR token.
+
+View QR tokens.
+
+See:
+
+Token
+
+Product
+
+Status
+
+Created date
+
+Used date
+
+Expiration
+
+Revoke token.
+
+QR generation must use secure random token.
+
+============================================================
+34. ANALYTICS
+============================================================
+
+Track:
+
+PAGE_VIEW
+
+PRODUCT_VIEW
+
+ADD_TO_CART
+
+ORDER_CREATED
+
+QR_SCANNED
+
+STORY_VIEWED
+
+QUIZ_COMPLETED
+
+BADGE_UNLOCKED
+
+PASSPORT_ACTIVATED
+
+API:
+
+POST /api/analytics/events
+
+Admin:
+
+GET /api/admin/analytics
+
+Show:
+
+- Views
+- QR scans
+- Story completion
+- Product conversion
+- Passport activation
+
+Important startup metric:
+
+QR Scan → Story Completion → Product/Experience conversion.
+
+============================================================
+35. AUDIT LOG
+============================================================
+
+Admin actions should create audit logs.
+
+Examples:
+
+ADMIN_LOGIN
+
+PRODUCT_CREATED
+
+PRODUCT_UPDATED
+
+PRODUCT_DELETED
+
+STORY_CREATED
+
+STORY_UPDATED
+
+QR_CREATED
+
+QR_REVOKED
+
+Store:
+
+user
+
+action
+
+entity
+
+entityId
+
+IP
+
+timestamp
+
+============================================================
+36. SECURITY REQUIREMENTS
+============================================================
+
+Security is a major part of the MVP because the team has two cybersecurity students.
+
+Implement:
+
+- Spring Security
+- JWT
+- BCrypt
+- RBAC
+- DTO validation
+- Input validation
+- Global exception handling
+- CORS configuration
+- Secure headers where appropriate
+- SQL injection protection through JPA
+- XSS protection
+- Authorization checks
+- QR token security
+- Replay protection
+- Rate limiting where practical
+- Audit logging
+- Environment variables
+- No hard-coded secrets
+
+Important:
+
+Frontend authorization is NOT enough.
+
+Backend must validate every protected operation.
+
+Do not trust:
+
+- userId from request body
+- role from frontend
+- points from frontend
+- product price from frontend
+- QR validity from frontend
+
+For order creation:
+
+Price MUST be retrieved from backend/database.
+
+Do not trust price submitted by React.
+
+For gamification:
+
+Points MUST be calculated on backend.
+
+For QR:
+
+Validity MUST be determined by backend.
+
+============================================================
+37. API RESPONSE FORMAT
+============================================================
+
+Use consistent API responses.
+
+Success:
+
+{
+  "success": true,
+  "data": {},
+  "message": "Success"
+}
+
+Error:
+
+{
+  "success": false,
+  "data": null,
+  "message": "Story Box not found",
+  "errorCode": "PRODUCT_NOT_FOUND",
+  "timestamp": "..."
+}
+
+HTTP:
+
+400 Bad Request
+
+401 Unauthorized
+
+403 Forbidden
+
+404 Not Found
+
+409 Conflict
+
+500 Internal Server Error
+
+============================================================
+38. GLOBAL EXCEPTION HANDLING
+============================================================
+
+Create:
+
+@RestControllerAdvice
+
+Handle:
+
+ValidationException
+
+AuthenticationException
+
+AccessDeniedException
+
+EntityNotFoundException
+
+DuplicateResourceException
+
+BusinessException
+
+UnexpectedException
+
+Never expose stack traces in production responses.
+
+============================================================
+39. FRONTEND API
+============================================================
+
+Create Axios instance:
+
+baseURL:
+
+VITE_API_BASE_URL
+
+Example:
+
+http://localhost:8080/api
+
+Create interceptors:
+
+Attach JWT.
+
+Handle 401.
+
+Handle expired token.
+
+Logout when authentication becomes invalid.
+
+Do not hard-code API URL.
+
+============================================================
+40. INTERNATIONALIZATION
+============================================================
+
+Support:
+
+Vietnamese
+
+English
+
+Use a clean translation architecture.
+
+Do not duplicate components unnecessarily.
+
+Example:
+
+VI:
+
+“Khám phá miền Tây”
+
+EN:
+
+“Discover the Mekong Delta”
+
+============================================================
+41. MOBILE-FIRST
+============================================================
+
+Mobile experience is extremely important.
+
+Typical user:
+
+Receive Story Box
+
+↓
+
+Scan QR with phone
+
+↓
+
+Open website
+
+↓
+
+Experience story
+
+↓
+
+Quiz
+
+↓
+
+Badge
+
+↓
+
+Passport
+
+The QR experience must load quickly.
+
+Mobile flow should require minimal clicks.
+
+Desktop should still look premium.
+
+============================================================
+42. ANIMATIONS
+============================================================
+
+Use Framer Motion.
+
+Animations:
+
+- Scroll reveal
+- Card hover
+- Box opening
+- Passport stamp
+- Badge unlock
+- QR scanning
+- Story transitions
+
+Keep animations subtle.
+
+Do not sacrifice performance.
+
+============================================================
+43. DEMO MODE
+============================================================
+
+Create:
+
+“Start Demo Journey”
+
+Demo flow:
+
+1. QR scan
+2. QR verified
+3. Story unlocked
+4. Story viewed
+5. Quiz answered
+6. Points earned
+7. Badge unlocked
+8. Passport updated
+
+The demo should take approximately:
+
+2–3 minutes.
+
+This feature is specifically for startup pitching.
+
+============================================================
+44. MOCK CONTENT
+============================================================
+
+Create realistic seed data.
+
+Locations:
+
+Cần Thơ
+
+Bến Tre
+
+Đồng Tháp
+
+An Giang
+
+Sóc Trăng
+
+Kiên Giang
+
+Stories:
+
+At least 8–10 stories.
+
+Categories:
+
+Food
+
+People
+
+Places
+
+Crafts
+
+Music
+
+Lifestyle
+
+Product:
+
+Mekong Story Box — Cần Thơ #001
+
+Price:
+
+299000
+
+Items:
+
+6
+
+Badges:
+
+At least 5.
+
+Users:
+
+Demo user.
+
+Admin:
+
+Demo admin.
+
+QR tokens:
+
+At least 5.
+
+Quiz:
+
+At least 5 questions.
+
+Do not use lorem ipsum.
+
+============================================================
+45. CONTENT STYLE
+============================================================
+
+Content must feel:
+
+Warm
+
+Authentic
+
+Story-driven
+
+Modern
+
+Not overly commercial.
+
+Bad:
+
+“Chúng tôi cung cấp sản phẩm đặc sản chất lượng cao.”
+
+Better:
+
+“Đằng sau mỗi món quà là một vùng đất, một người làm ra nó, và một câu chuyện đáng được kể.”
+
+============================================================
+46. SWAGGER
+============================================================
+
+Integrate Springdoc OpenAPI.
+
+Swagger UI:
+
+/swagger-ui.html
+
+Document:
+
+Auth
+
+Products
+
+Stories
+
+Locations
+
+Passport
+
+QR
+
+Quiz
+
+Cart
+
+Orders
+
+Admin
+
+Analytics
+
+============================================================
+47. TESTING
+============================================================
+
+Backend tests:
+
+- Register
+- Login
+- JWT
+- Role authorization
+- Product API
+- Story API
+- QR validation
+- QR replay protection
+- Passport
+- Points calculation
+- Badge unlocking
+- Cart
+- Order
+- Admin access
+
+Frontend tests for critical flows if practical.
+
+============================================================
+48. DOCKER
+============================================================
+
+If Docker is used:
+
+docker-compose.yml
+
+Services:
+
+sqlserver
+
+backend
+
+frontend
+
+SQL Server:
+
+mcr.microsoft.com/mssql/server:2022-latest
+
+Port:
+
+1433
+
+Environment:
+
+ACCEPT_EULA=Y
+
+MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD}
+
+Do not hard-code passwords.
+
+When backend runs inside Docker:
+
+SQL Server hostname:
+
+sqlserver
+
+Port:
+
+1433
+
+============================================================
+49. README
+============================================================
+
+Create complete README.md.
+
+Include:
+
+Project overview
+
+Architecture
+
+Tech stack
+
+Folder structure
+
+Database setup
+
+Environment variables
+
+SQL Server setup
+
+Flyway migration
+
+Backend startup
+
+Frontend startup
+
+Docker startup
+
+Swagger
+
+Demo account
+
+Demo QR
+
+API overview
+
+Security notes
+
+============================================================
+50. PROJECT DEVELOPMENT PHASES
+============================================================
+
+Do NOT build everything blindly in one step.
+
+Implement in phases.
+
+PHASE 1:
+
+Project setup
+
+React
+
+Spring Boot
+
+SQL Server
+
+Flyway
+
+Basic configuration
+
+PHASE 2:
+
+Database
+
+Entities
+
+Repositories
+
+Migrations
+
+Seed data
+
+PHASE 3:
+
+Authentication
+
+Register
+
+Login
+
+JWT
+
+RBAC
+
+PHASE 4:
+
+Products
+
+Stories
+
+Locations
+
+Public APIs
+
+PHASE 5:
+
+Homepage
+
+Story Box UI
+
+Product detail
+
+Stories UI
+
+PHASE 6:
+
+QR Experience
+
+QR verification
+
+Story unlock
+
+PHASE 7:
+
+Quiz
+
+Gamification
+
+Points
+
+Badges
+
+Digital Passport
+
+PHASE 8:
+
+Cart
+
+Checkout
+
+Orders
+
+PHASE 9:
+
+Admin Dashboard
+
+Product management
+
+Story management
+
+QR management
+
+Analytics
+
+PHASE 10:
+
+Security review
+
+PHASE 11:
+
+Responsive optimization
+
+PHASE 12:
+
+Demo mode
+
+PHASE 13:
+
+Testing
+
+PHASE 14:
+
+Documentation
+
+After every phase:
+
+- Build
+- Test
+- Fix errors
+- Verify existing features
+- Do not break previous functionality
+
+============================================================
+51. ACCEPTANCE CRITERIA
+============================================================
+
+MVP is complete only when:
+
+1. React builds successfully.
+2. Spring Boot builds successfully.
+3. SQL Server connection works.
+4. Flyway migrations work.
+5. Seed data works.
+6. Register works.
+7. Login works.
+8. JWT works.
+9. RBAC works.
+10. Homepage works.
+11. Story Box loads from backend.
+12. Product detail loads from backend.
+13. Stories load from backend.
+14. Location map works.
+15. QR verification works.
+16. Invalid QR is rejected.
+17. QR replay is prevented.
+18. Story experience works.
+19. Quiz works.
+20. Backend calculates points.
+21. Badge unlock works.
+22. Digital Passport works.
+23. Cart works.
+24. Order creation works.
+25. Backend calculates final price.
+26. Admin dashboard works.
+27. Admin authorization works.
+28. Analytics works.
+29. Audit log works.
+30. Swagger works.
+31. Mobile responsive works.
+32. Demo mode works.
+33. No hard-coded secrets.
+34. No plaintext passwords.
+35. No critical security vulnerability in the MVP flow.
+36. README is complete.
+
+============================================================
+52. IMPORTANT ENGINEERING RULES
+============================================================
+
+Do NOT create only a visual mockup.
+
+Build a real full-stack MVP.
+
+React must communicate with Spring Boot through REST API.
+
+Spring Boot must communicate with SQL Server.
+
+Do not hard-code all products in React.
+
+Do not hard-code all stories in React.
+
+Do not use fake API responses when a real backend endpoint exists.
+
+Do not expose database entities directly.
+
+Use DTOs.
+
+Do not put business logic in controllers.
+
+Use Service layer.
+
+Do not trust frontend values for:
+
+- Price
+- Points
+- User ID
+- Role
+- QR validity
+
+Do not use blockchain just for marketing.
+
+Do not add unnecessary microservices.
+
+Keep this as a modular monolith for MVP.
+
+============================================================
+53. MVP BUSINESS PRINCIPLE
+============================================================
+
+Always remember:
+
+The physical Story Box is NOT the final product.
+
+The physical Story Box is the entry point.
+
+The real product ecosystem is:
+
+Physical Story Box
+        ↓
+QR
+        ↓
+Digital Cultural Experience
+        ↓
+Stories
+        ↓
+Quiz
+        ↓
+Points
+        ↓
+Digital Passport
+        ↓
+Badges
+        ↓
+More Stories
+        ↓
+More Story Boxes
+        ↓
+Community
+        ↓
+Future tourism / commerce ecosystem
+
+The MVP should communicate this vision.
+
+============================================================
+54. START IMPLEMENTATION
+============================================================
+
+Before writing code:
+
+STEP 1:
+Analyze the existing repository.
+
+STEP 2:
+Identify current frontend/backend/database setup.
+
+STEP 3:
+Do NOT delete existing working code without reason.
+
+STEP 4:
+Propose the target architecture.
+
+STEP 5:
+Propose database schema.
+
+STEP 6:
+Propose REST API.
+
+STEP 7:
+Create implementation plan.
+
+Then start implementation.
+
+When implementing:
+
+- Work incrementally.
+- Build after major changes.
+- Fix compilation errors immediately.
+- Fix TypeScript errors.
+- Fix Java errors.
+- Fix SQL migration errors.
+- Test API endpoints.
+- Test frontend flows.
+- Keep code clean.
+
+At the end, provide:
+
+1. What was implemented.
+2. How to run frontend.
+3. How to run backend.
+4. How to configure SQL Server.
+5. How to run Flyway.
+6. Demo credentials.
+7. Demo QR token.
+8. Main API endpoints.
+9. Remaining TODOs.
+10. Security considerations.
+
+DO NOT stop at creating a design.
+
+IMPLEMENT THE WORKING MVP.
