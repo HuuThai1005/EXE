@@ -20,4 +20,10 @@ public class Story {
     public String getCategory() { return category; }
     public String getCoverImage() { return coverImage; }
     public Integer getReadingTime() { return readingTime; }
+    public void setTitle(String title) { this.title = title; }
+    public void setSlug(String slug) { this.slug = slug; }
+    public void setSummary(String summary) { this.summary = summary; }
+    public void setCategory(String category) { this.category = category; }
+    public void setCoverImage(String coverImage) { this.coverImage = coverImage; }
+    public void setReadingTime(Integer readingTime) { this.readingTime = readingTime; }
 }

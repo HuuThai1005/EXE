@@ -55,6 +55,7 @@ Flyway chạy migration khi ứng dụng khởi động. `spring.jpa.hibernate.d
 - Auth: `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout`
 - Passport: `GET /api/passport` (authenticated)
 - QR: `POST /api/qr/verify` (authenticated, replay protection theo user/token)
+- Admin: `GET /api/admin/overview`, `POST /api/admin/products`, `POST /api/admin/stories`, `POST /api/admin/qr-tokens` (ADMIN role)
 
 Khi chạy trên điện thoại, camera yêu cầu HTTPS. `localhost` được trình duyệt cho phép trong môi trường phát triển. QR demo trong database nên trỏ tới `http://localhost:5173/experience/qr/demo-can-tho-001` khi test trên máy local.
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
@@ -67,6 +68,21 @@ Frontend gọi REST JSON qua Axios. Backend giữ business logic ở service lay
 ## Tài khoản demo
 
 UI hiện có Demo Journey không cần đăng nhập để trình bày luồng pitch. Khi nối đầy đủ auth, seed admin/user nên được cung cấp qua migration hoặc biến môi trường, không commit password thật.
+
+Để cấp quyền quản trị cho một tài khoản đã đăng ký, chạy câu lệnh SQL sau trong database:
+
+```sql
+INSERT INTO user_roles(user_id, role_id)
+SELECT u.id, r.id
+FROM users u CROSS JOIN roles r
+WHERE u.email = 'admin@example.com' AND r.name = 'ADMIN'
+	AND NOT EXISTS (
+		SELECT 1 FROM user_roles existing
+		WHERE existing.user_id = u.id AND existing.role_id = r.id
+	);
+```
+
+Sau khi đăng nhập lại, mở `http://localhost:5173/admin`. Mua hàng chỉ tạo đơn hàng demo; passport chỉ tăng exploration khi người dùng xác thực QR hợp lệ.
 
 ## Lộ trình tiếp theo
 

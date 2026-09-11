@@ -1290,3 +1290,89 @@ textarea { min-height: 110px; resize: vertical; }
   .cart-item img { height: 220px; }
   .experience-card, .journey-card, .auth-card, .scanner-card { padding: 28px 20px; }
 }
+
+.admin-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+}
+.admin-heading .eyebrow { gap: 8px; }
+.admin-heading > div > p:last-child { max-width: 510px; }
+.admin-status {
+  padding: 10px 12px;
+  border: 1px solid rgba(18,61,54,0.12);
+  border-radius: 999px;
+  color: var(--green);
+  font: 500 9px 'DM Mono';
+  letter-spacing: 1.5px;
+}
+.admin-workspace {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  margin-top: 34px;
+  overflow: hidden;
+  border: 1px solid rgba(18,61,54,0.1);
+  border-radius: 26px;
+  background: rgba(255,255,255,0.5);
+  box-shadow: var(--shadow);
+}
+.admin-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 24px 16px;
+  background: rgba(18,61,54,0.96);
+}
+.admin-sidebar > span {
+  margin: 4px 10px 14px;
+  color: rgba(255,255,255,0.54);
+  font: 500 9px 'DM Mono';
+  letter-spacing: 1.5px;
+}
+.admin-sidebar button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 12px;
+  border-radius: 12px;
+  background: transparent;
+  color: rgba(255,255,255,0.7);
+  text-align: left;
+  font-size: 13px;
+}
+.admin-sidebar button:hover, .admin-sidebar button.selected { background: rgba(255,255,255,0.12); color: #fff; }
+.admin-form-area { padding: 30px 34px 34px; }
+.admin-form-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--line);
+}
+.admin-form-heading h2 { margin: 12px 0 0; font-size: clamp(30px, 4vw, 48px); }
+.admin-form-heading > svg { color: var(--orange); }
+.admin-form { display: grid; gap: 18px; margin-top: 24px; }
+.form-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.admin-form .button { justify-self: start; margin-top: 4px; }
+.admin-message { padding: 12px 14px; border-radius: 12px; margin: 18px 0 0; font-size: 13px; }
+.admin-message.success { background: rgba(18,61,54,0.08); color: var(--green); }
+.admin-message.error { background: rgba(217,111,67,0.1); color: #a64e2c; }
+.qr-admin-note { display: flex; gap: 12px; align-items: start; padding: 15px; border-radius: 14px; background: rgba(168,201,192,0.2); color: var(--green); }
+.qr-admin-note p { margin-top: 4px; font-size: 13px; }
+
+@media (max-width: 960px) {
+  .admin-workspace { grid-template-columns: 180px 1fr; }
+}
+
+@media (max-width: 800px) {
+  .admin-heading { display: block; }
+  .admin-status { display: inline-block; margin-top: 18px; }
+  .admin-workspace { grid-template-columns: 1fr; }
+  .admin-sidebar { display: grid; grid-template-columns: repeat(3, 1fr); padding: 14px; }
+  .admin-sidebar > span { grid-column: 1 / -1; margin: 4px 8px; }
+  .admin-sidebar button { justify-content: center; }
+  .admin-form-area { padding: 24px 20px; }
+  .form-pair { grid-template-columns: 1fr; }
+}
