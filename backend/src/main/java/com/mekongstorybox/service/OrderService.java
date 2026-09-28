@@ -5,6 +5,8 @@ import com.mekongstorybox.dto.OrderDtos.OrderItemRequest;
 import com.mekongstorybox.dto.OrderDtos.OrderHistoryResponse;
 import com.mekongstorybox.dto.OrderDtos.OrderItemResponse;
 import com.mekongstorybox.dto.OrderDtos.OrderResponse;
+import com.mekongstorybox.dto.OrderDtos.RedemptionResponse;
+import com.mekongstorybox.dto.OrderDtos.RedeemProductRequest;
 import com.mekongstorybox.dto.OrderDtos.OrderStatusEventResponse;
 import com.mekongstorybox.dto.OrderDtos.AdminOrderResponse;
 import com.mekongstorybox.entity.CustomerOrder;
@@ -32,6 +34,7 @@ import java.util.stream.Collectors;
 @Service
 public class OrderService {
     private static final int ORDER_PASSPORT_POINTS = 100;
+    private static final int REWARD_REDEMPTION_POINTS = 500;
 
     private final CustomerOrderRepository orders;
     private final CustomerOrderStatusHistoryRepository statusHistory;
@@ -76,9 +79,30 @@ public class OrderService {
         order.setTotalAmount(total);
         orders.save(order);
         statusHistory.save(new CustomerOrderStatusHistory(order, "PLACED", "Đơn hàng đã được tiếp nhận."));
-        passports.getOrCreate(user).addExploration(ORDER_PASSPORT_POINTS);
+        passports.addExploration(user, ORDER_PASSPORT_POINTS);
 
         return new OrderResponse(order.getOrderCode(), total, ORDER_PASSPORT_POINTS);
+    }
+
+    @Transactional
+    public RedemptionResponse redeemProduct(String email, RedeemProductRequest request) {
+        var user = users.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Vui lòng đăng nhập để đổi quà."));
+        var product = products.findById(request.productId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy sản phẩm."));
+        if (!"ACTIVE".equals(product.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Sản phẩm này hiện không thể đổi.");
+        }
+
+        passports.spendForReward(user, REWARD_REDEMPTION_POINTS);
+        var order = new CustomerOrder(user, createOrderCode(), request.customerName().trim(),
+                request.phone().trim(), request.shippingAddress().trim(), REWARD_REDEMPTION_POINTS);
+        order.addRewardItem(product);
+        order.setTotalAmount(BigDecimal.ZERO);
+        orders.save(order);
+        statusHistory.save(new CustomerOrderStatusHistory(order, "PLACED", "Đổi quà thành công, đơn hàng đang chờ xử lý."));
+
+        return new RedemptionResponse(order.getOrderCode(), REWARD_REDEMPTION_POINTS, product.getName());
     }
 
     @Transactional(readOnly = true)
@@ -91,25 +115,61 @@ public class OrderService {
     @Transactional(readOnly = true)
     public List<AdminOrderResponse> listAllOrders() {
         return orders.findAllByOrderByCreatedAtDesc().stream().map(order -> new AdminOrderResponse(
-                order.getId(), order.getOrderCode(), order.getCustomerName(), order.getUser().getEmail(),
-                order.getPhone(), order.getShippingAddress(), order.getTotalAmount(), order.getStatus(), order.getCreatedAt()
+            order.getId(), order.getOrderCode(), order.getOrderType(), order.getCustomerName(), order.getUser().getEmail(),
+                order.getPhone(), order.getShippingAddress(), order.getShippingCarrier(), order.getTrackingNumber(),
+                order.getTotalAmount(), order.getStatus(), order.getCreatedAt()
         )).toList();
     }
 
     @Transactional
-    public AdminOrderResponse updateStatus(Long orderId, String requestedStatus) {
+    public AdminOrderResponse updateStatus(Long orderId, String requestedStatus, String shippingCarrier, String trackingNumber) {
         var order = orders.findById(orderId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng."));
         var nextStatus = requestedStatus.trim().toUpperCase(Locale.ROOT);
+        if ("SHIPPED".equals(nextStatus)
+                && (shippingCarrier == null || shippingCarrier.isBlank() || trackingNumber == null || trackingNumber.isBlank())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cần nhập đơn vị vận chuyển và mã vận đơn.");
+        }
         if (!isAllowedTransition(order.getStatus(), nextStatus)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Trạng thái đơn hàng không hợp lệ hoặc không thể chuyển tiếp.");
         }
         if (!order.getStatus().equals(nextStatus)) {
+            if ("SHIPPED".equals(nextStatus)) {
+                order.updateShipping(shippingCarrier.trim(), trackingNumber.trim());
+            }
             order.updateStatus(nextStatus);
-            statusHistory.save(new CustomerOrderStatusHistory(order, nextStatus, noteForStatus(nextStatus)));
+            var note = "SHIPPED".equals(nextStatus)
+                    ? noteForStatus(nextStatus) + " " + order.getShippingCarrier() + " · Mã vận đơn: " + order.getTrackingNumber()
+                    : noteForStatus(nextStatus);
+            statusHistory.save(new CustomerOrderStatusHistory(order, nextStatus, note));
+            if ("CANCELLED".equals(nextStatus) && "REDEMPTION".equals(order.getOrderType())) {
+                passports.refundPoints(order.getUser(), order.getPassportPointsSpent());
+            }
         }
-        return new AdminOrderResponse(order.getId(), order.getOrderCode(), order.getCustomerName(), order.getUser().getEmail(),
-                order.getPhone(), order.getShippingAddress(), order.getTotalAmount(), order.getStatus(), order.getCreatedAt());
+        return toAdminOrder(order);
+    }
+
+    @Transactional
+    public OrderHistoryResponse confirmReceived(String email, Long orderId) {
+        var user = users.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Vui lòng đăng nhập."));
+        var order = orders.findById(orderId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng."));
+        if (!order.getUser().getId().equals(user.getId())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng.");
+        }
+        if (!"SHIPPED".equals(order.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Chỉ có thể xác nhận nhận hàng khi đơn đang vận chuyển.");
+        }
+        order.updateStatus("DELIVERED");
+        statusHistory.save(new CustomerOrderStatusHistory(order, "DELIVERED", "Khách hàng xác nhận đã nhận hàng."));
+        return toOrderHistory(List.of(order)).getFirst();
+    }
+
+    private AdminOrderResponse toAdminOrder(CustomerOrder order) {
+        return new AdminOrderResponse(order.getId(), order.getOrderCode(), order.getOrderType(), order.getCustomerName(),
+                order.getUser().getEmail(), order.getPhone(), order.getShippingAddress(), order.getShippingCarrier(),
+                order.getTrackingNumber(), order.getTotalAmount(), order.getStatus(), order.getCreatedAt());
     }
 
     private List<OrderHistoryResponse> toOrderHistory(List<CustomerOrder> customerOrders) {
@@ -125,12 +185,13 @@ public class OrderService {
                     : events;
             var items = order.getItems().stream()
                     .map(item -> new OrderItemResponse(item.getProductName(), item.getUnitPrice(), item.getQuantity())).toList();
-            return new OrderHistoryResponse(order.getId(), order.getOrderCode(), order.getStatus(), order.getTotalAmount(), order.getCreatedAt(), items, history);
+                return new OrderHistoryResponse(order.getId(), order.getOrderCode(), order.getOrderType(), order.getPassportPointsSpent(),
+                    order.getStatus(), order.getShippingCarrier(), order.getTrackingNumber(), order.getTotalAmount(), order.getCreatedAt(), items, history);
         }).toList();
     }
 
     private boolean isAllowedTransition(String currentStatus, String nextStatus) {
-        var flow = List.of("PLACED", "PROCESSING", "SHIPPED", "DELIVERED");
+        var flow = List.of("PLACED", "PROCESSING", "SHIPPED");
         if (currentStatus.equals(nextStatus)) return true;
         if ("CANCELLED".equals(nextStatus)) return Set.of("PLACED", "PROCESSING").contains(currentStatus);
         int currentIndex = flow.indexOf(currentStatus);

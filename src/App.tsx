@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { ArrowRight, Camera, Check, ChevronDown, Compass, Crown, FileText, Globe, Menu, Minus, Package, Plus, QrCode, ShieldCheck, ShoppingBag, Stamp, X } from 'lucide-react'
+import { ArrowRight, Camera, Check, ChevronDown, Compass, Crown, FileText, Gift, Globe, Menu, Minus, Package, Plus, QrCode, ShieldCheck, ShoppingBag, Stamp, X } from 'lucide-react'
 import { api } from './services/api'
 import { AuthUser, currentUser, login, logout, register } from './services/authService'
 import QrScanner from './components/QrScanner'
@@ -85,7 +85,67 @@ function DemoQrList() {
 }
 
 function QRExperience() { const [done, setDone] = useState(false); const [error, setError] = useState(''); const [loading, setLoading] = useState(false); const { token } = useParams(); const navigate = useNavigate(); const verify = async () => { setLoading(true); setError(''); try { const response = await api.post<{ data: { valid: boolean } }>('/qr/verify', { token }); if (response.data.data.valid) setDone(true); else setError('QR code không hợp lệ hoặc đã bị vô hiệu hóa.'); } catch (requestError: any) { setError(requestError.response?.status === 401 ? 'Vui lòng đăng nhập trước khi scan QR.' : 'QR code này chưa được kích hoạt hoặc không tồn tại.'); } finally { setLoading(false); } }; return <main className="experience qr-page"><div className="journey-card">{!done ? <><div className="success-icon"><QrCode size={31} /></div><p className="eyebrow">QR VERIFICATION / CẦN THƠ #001</p><h1>Your Mekong<br /><em>journey begins.</em></h1><p>Mã QR đã sẵn sàng mở ra một câu chuyện từ chợ nổi Cái Răng.</p>{error && <><p role="alert">{error}</p>{error.includes('đăng nhập') && <Link className="under-link" to="/login">Đăng nhập để tiếp tục <ArrowRight size={15} /></Link>}</>}<button className="button dark" onClick={verify} disabled={loading}>{loading ? 'Đang xác thực...' : 'Xác thực QR'} <Check size={17} /></button></> : <><div className="success-icon"><Check size={31} /></div><p className="eyebrow">EXPERIENCE UNLOCKED</p><h1>Chào mừng bạn<br /><em>về miền Tây.</em></h1><p>Lần khám phá đã được ghi vào Digital Passport của bạn.</p><div className="reward"><Stamp size={20} /><span>EXPERIENCE COUNTED</span><strong>+100 điểm</strong></div><button className="button dark" onClick={() => navigate('/passport')}>Mở Digital Passport <ArrowRight size={17} /></button></>}</div></main> }
-function Passport() { const [passport, setPassport] = useState<{ totalPoints: number; level: number; explorationCount: number }>(); const [error, setError] = useState(false); useEffect(() => { api.get<{ data: typeof passport }>('/passport').then(response => setPassport(response.data.data)).catch(() => setError(true)) }, []); const points = passport?.totalPoints ?? 0; const count = passport?.explorationCount ?? 0; return <main className="page passport-page"><div className="passport-head section-wrap"><div><p className="eyebrow">YOUR COLLECTIBLE JOURNEY</p><h1>Digital<br /><em>Passport.</em></h1></div><div className="level-mark"><Crown size={19} /><span>LEVEL {passport?.level ?? 1}</span><strong>{count ? 'MEKONG EXPLORER' : 'READY TO EXPLORE'}</strong></div></div><section className="passport-paper section-wrap"><div className="passport-top"><span>MEKONG STORY BOX</span><span>EXPLORATIONS {count}</span></div><div className="passport-main"><div className="passport-avatar"><Compass size={42} /><small>EXPLORER</small></div><div><p className="eyebrow">{error ? 'SIGN IN TO CONTINUE' : count ? 'YOUR JOURNEY SO FAR' : 'YOUR JOURNEY STARTS HERE'}</p><h2>{count ? <>Your story<br /><em>is growing.</em></> : <>Your passport<br /><em>is waiting.</em></>}</h2><div className="points"><strong>{points.toLocaleString('vi-VN')}</strong><span>POINTS EARNED</span></div></div></div><div className="progress-label"><span>YOUR PROGRESS</span><span>{count} EXPLORATIONS</span></div><div className="progress"><span style={{ width: `${Math.min(count * 20, 100)}%` }} /></div><div className="badge-row"><div className={'passport-badge ' + (count ? 'unlocked' : 'locked')}><span>🛶</span><b>Floating Market</b><small>{count ? 'UNLOCKED' : 'LOCKED'}</small></div><div className="passport-badge locked"><span>🌿</span><b>Mekong Garden</b><small>LOCKED</small></div><div className="passport-badge locked"><span>🎵</span><b>Southern Music</b><small>LOCKED</small></div><div className="passport-badge locked"><span>🍜</span><b>Mekong Cuisine</b><small>LOCKED</small></div></div></section></main> }
+function Passport() {
+    const [passport, setPassport] = useState<{ totalPoints: number; level: number; explorationCount: number }>()
+    const [error, setError] = useState(false)
+    useEffect(() => {
+        api.get<{ data: typeof passport }>('/passport')
+            .then(response => setPassport(response.data.data))
+            .catch(() => setError(true))
+    }, [])
+    const points = passport?.totalPoints ?? 0
+    const count = passport?.explorationCount ?? 0
+    const handleRedeemed = () => setPassport(current => current ? {
+        ...current,
+        totalPoints: current.totalPoints - 500,
+        level: Math.max(1, Math.floor((current.totalPoints - 500) / 500) + 1),
+    } : current)
+    return <main className="page passport-page"><div className="passport-head section-wrap"><div><p className="eyebrow">YOUR COLLECTIBLE JOURNEY</p><h1>Digital<br /><em>Passport.</em></h1></div><div className="level-mark"><Crown size={19} /><span>LEVEL {passport?.level ?? 1}</span><strong>{count ? 'MEKONG EXPLORER' : 'READY TO EXPLORE'}</strong></div></div><section className="passport-paper section-wrap"><div className="passport-top"><span>MEKONG STORY BOX</span><span>EXPLORATIONS {count}</span></div><div className="passport-main"><div className="passport-avatar"><Compass size={42} /><small>EXPLORER</small></div><div><p className="eyebrow">{error ? 'SIGN IN TO CONTINUE' : count ? 'YOUR JOURNEY SO FAR' : 'YOUR JOURNEY STARTS HERE'}</p><h2>{count ? <>Your story<br /><em>is growing.</em></> : <>Your passport<br /><em>is waiting.</em></>}</h2><div className="points"><strong>{points.toLocaleString('vi-VN')}</strong><span>POINTS AVAILABLE</span></div></div></div><div className="progress-label"><span>YOUR PROGRESS</span><span>{count} EXPLORATIONS</span></div><div className="progress"><span style={{ width: `${points % 500 / 5}%` }} /></div><div className="badge-row"><div className={'passport-badge ' + (count ? 'unlocked' : 'locked')}><span>🛶</span><b>Floating Market</b><small>{count ? 'UNLOCKED' : 'LOCKED'}</small></div><div className="passport-badge locked"><span>🌿</span><b>Mekong Garden</b><small>LOCKED</small></div><div className="passport-badge locked"><span>🎵</span><b>Southern Music</b><small>LOCKED</small></div><div className="passport-badge locked"><span>🍜</span><b>Mekong Cuisine</b><small>LOCKED</small></div></div></section><PassportRewards points={points} authenticated={!error && Boolean(passport)} onRedeemed={handleRedeemed} /></main>
+}
+
+function PassportRewards({ points, authenticated, onRedeemed }: { points: number; authenticated: boolean; onRedeemed: () => void }) {
+    const [products, setProducts] = useState<Product[]>([])
+    const [selectedProduct, setSelectedProduct] = useState<Product>()
+    const [loading, setLoading] = useState(true)
+    const [submitting, setSubmitting] = useState(false)
+    const [error, setError] = useState('')
+    const [success, setSuccess] = useState('')
+    useEffect(() => {
+        api.get<{ data: Product[] }>('/products/redeemable').then(response => setProducts(response.data.data)).catch(() => setError('Không thể tải sản phẩm đổi quà.')).finally(() => setLoading(false))
+    }, [])
+    const redeem = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault()
+        if (!selectedProduct) return
+        setSubmitting(true)
+        setError('')
+        const form = new FormData(event.currentTarget)
+        try {
+            const response = await api.post<{ data: { orderCode: string } }>('/passport/redemptions', {
+                productId: selectedProduct.id,
+                customerName: String(form.get('customerName')),
+                phone: String(form.get('phone')),
+                shippingAddress: String(form.get('shippingAddress')),
+            })
+            onRedeemed()
+            setSuccess(`Đổi quà thành công. Mã đơn ${response.data.data.orderCode}. Đơn đã có trong mục Đơn hàng.`)
+            setSelectedProduct(undefined)
+        } catch (requestError: any) {
+            const status = requestError.response?.status
+            setError(status === 409 ? 'Số điểm hiện tại chưa đủ 500 để đổi quà.' : status === 401
+                ? 'Vui lòng đăng nhập để sử dụng điểm Passport.'
+                : status === 404 ? 'Backend chưa được cập nhật chức năng đổi quà.' : 'Không thể đổi quà lúc này. Điểm của bạn chưa bị trừ.')
+        } finally {
+            setSubmitting(false)
+        }
+    }
+    return <section className="section-wrap passport-rewards"><div className="passport-rewards-heading"><div><p className="eyebrow"><Gift size={15} /> REWARD EXCHANGE</p><h2>Đổi điểm<br /><em>lấy quà.</em></h2><p>Đổi 500 điểm lấy một sản phẩm bất kỳ. Phí sản phẩm được thanh toán bằng điểm Passport.</p></div><div className="reward-balance"><strong>{points.toLocaleString('vi-VN')}</strong><span>ĐIỂM CÒN LẠI</span><small>{Math.floor(points / 500)} lượt đổi</small></div></div>
+        {success && <p className="reward-feedback success" role="status">{success} <Link to="/orders">Theo dõi đơn hàng <ArrowRight size={14} /></Link></p>}
+        {error && !selectedProduct && <p className="reward-feedback error" role="alert">{error}</p>}
+        {loading ? <p role="status">Đang tải sản phẩm...</p> : <div className="reward-product-grid">{products.map(product => <article className="reward-product" key={product.id}><div className="reward-product-image"><img src={product.thumbnailUrl} alt={product.name} /></div><div className="reward-product-info"><span className="number-label">{product.slug}</span><h3>{product.name}</h3><p>{product.description}</p><button className="button dark" disabled={!authenticated || points < 500} onClick={() => { setError(''); setSelectedProduct(product) }}>{points < 500 ? 'Cần đủ 500 điểm' : 'Đổi 500 điểm'} <Gift size={15} /></button></div></article>)}</div>}
+        {!authenticated && <p className="reward-login-note">Đăng nhập để xem số điểm và đổi quà. <Link to="/login" state={{ from: '/passport' }}>Đăng nhập</Link></p>}
+        {selectedProduct && <div className="reward-dialog-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget && !submitting) setSelectedProduct(undefined) }}><section className="reward-dialog" role="dialog" aria-modal="true" aria-labelledby="reward-dialog-title"><button type="button" className="icon-btn reward-dialog-close" aria-label="Đóng" disabled={submitting} onClick={() => setSelectedProduct(undefined)}><X size={17} /></button><p className="eyebrow">REDEEM / 500 POINTS</p><h2 id="reward-dialog-title">Nhận {selectedProduct.name}</h2><p>Đơn đổi quà trị giá 0đ sẽ được tạo và chuyển vào tiến trình giao hàng.</p>{error && <p className="reward-feedback error" role="alert">{error}</p>}<form className="reward-form" onSubmit={redeem}><label>HỌ VÀ TÊN<input name="customerName" required maxLength={150} placeholder="Nguyễn Minh Linh" /></label><label>SỐ ĐIỆN THOẠI<input name="phone" required maxLength={50} placeholder="09xx xxx xxx" /></label><label>ĐỊA CHỈ NHẬN QUÀ<textarea name="shippingAddress" required maxLength={1000} placeholder="Số nhà, đường, phường/xã, tỉnh/thành phố" /></label><button className="button dark" type="submit" disabled={submitting}>{submitting ? 'Đang đổi quà...' : 'Xác nhận đổi quà'} <Gift size={15} /></button></form></section></div>}
+    </section>
+}
 function Cart({ items, updateQuantity, removeItem }: { items: CartItem[]; updateQuantity: (id: number, quantity: number) => void; removeItem: (id: number) => void }) {
     const navigate = useNavigate()
     const subtotal = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0)

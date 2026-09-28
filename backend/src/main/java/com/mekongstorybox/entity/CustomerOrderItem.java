@@ -17,10 +17,14 @@ public class CustomerOrderItem {
     protected CustomerOrderItem() {}
 
     public CustomerOrderItem(CustomerOrder order, Product product, int quantity) {
+        this(order, product, quantity, product.getPrice());
+    }
+
+    public CustomerOrderItem(CustomerOrder order, Product product, int quantity, BigDecimal unitPrice) {
         this.order = order;
         this.product = product;
         this.productName = product.getName();
-        this.unitPrice = product.getPrice();
+        this.unitPrice = unitPrice;
         this.quantity = quantity;
     }
 

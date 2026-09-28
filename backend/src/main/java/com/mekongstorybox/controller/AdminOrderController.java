@@ -21,6 +21,6 @@ public class AdminOrderController {
 
     @PutMapping("/{id}/status")
     public Map<String, Object> updateStatus(@PathVariable Long id, @Valid @RequestBody UpdateOrderStatusRequest request) {
-        return Map.of("success", true, "data", orders.updateStatus(id, request.status()), "message", "Order status updated");
+        return Map.of("success", true, "data", orders.updateStatus(id, request.status(), request.shippingCarrier(), request.trackingNumber()), "message", "Order status updated");
     }
 }

@@ -7,10 +7,14 @@ import { OrderStatus, orderStatusLabels } from '../services/orderStatus'
 type AdminOrder = {
     id: number
     orderCode: string
+    orderType: 'PURCHASE' | 'REDEMPTION'
+    passportPointsSpent: number
     customerName: string
     customerEmail: string
     phone: string
     shippingAddress: string
+    shippingCarrier: string | null
+    trackingNumber: string | null
     totalAmount: number
     status: OrderStatus
     createdAt: string
@@ -19,7 +23,7 @@ type AdminOrder = {
 const nextStatuses: Record<OrderStatus, OrderStatus[]> = {
     PLACED: ['PROCESSING', 'CANCELLED'],
     PROCESSING: ['SHIPPED', 'CANCELLED'],
-    SHIPPED: ['DELIVERED'],
+    SHIPPED: [],
     DELIVERED: [],
     CANCELLED: [],
 }
@@ -29,6 +33,8 @@ const date = (value: string) => new Date(value).toLocaleString('vi-VN', { dateSt
 export default function AdminOrders() {
     const [orders, setOrders] = useState<AdminOrder[]>([])
     const [drafts, setDrafts] = useState<Record<number, OrderStatus>>({})
+    const [carriers, setCarriers] = useState<Record<number, string>>({})
+    const [trackingNumbers, setTrackingNumbers] = useState<Record<number, string>>({})
     const [loading, setLoading] = useState(true)
     const [savingId, setSavingId] = useState<number>()
     const [error, setError] = useState('')
@@ -40,6 +46,8 @@ export default function AdminOrders() {
             const response = await api.get<{ data: AdminOrder[] }>('/admin/orders')
             setOrders(response.data.data)
             setDrafts(Object.fromEntries(response.data.data.map(order => [order.id, order.status])))
+            setCarriers(Object.fromEntries(response.data.data.map(order => [order.id, order.shippingCarrier ?? ''])))
+            setTrackingNumbers(Object.fromEntries(response.data.data.map(order => [order.id, order.trackingNumber ?? ''])))
         } catch {
             setError('Không thể tải đơn hàng. Hãy kiểm tra quyền ADMIN và trạng thái backend.')
         } finally {
@@ -56,7 +64,11 @@ export default function AdminOrders() {
         setError('')
         setMessage('')
         try {
-            await api.put(`/admin/orders/${order.id}/status`, { status })
+            await api.put(`/admin/orders/${order.id}/status`, {
+                status,
+                shippingCarrier: carriers[order.id] ?? '',
+                trackingNumber: trackingNumbers[order.id] ?? '',
+            })
             setMessage(`Đã cập nhật ${order.orderCode}.`)
             await load()
         } catch {
@@ -71,9 +83,9 @@ export default function AdminOrders() {
         {message && <p className="admin-message success" role="status">{message}</p>}
         {error && <p className="admin-message error" role="alert">{error}</p>}
         {loading ? <p role="status">Đang tải đơn hàng...</p> : orders.length === 0 ? <p>Chưa có đơn hàng nào.</p> : <div className="admin-order-list">{orders.map(order => <article className="admin-order-card" key={order.id}>
-            <div className="admin-order-heading"><div><span className="number-label">{order.orderCode}</span><strong>{order.customerName}</strong><small>{order.customerEmail} · {date(order.createdAt)}</small></div><strong>{money(order.totalAmount)}</strong></div>
-            <div className="admin-order-shipping"><span>{order.phone}</span><span>{order.shippingAddress}</span></div>
-            <div className="admin-order-controls"><span className={`order-status order-status-${order.status.toLowerCase()}`}>{orderStatusLabels[order.status]}</span><select aria-label={`Trạng thái ${order.orderCode}`} value={drafts[order.id] ?? order.status} onChange={event => setDrafts(current => ({ ...current, [order.id]: event.target.value as OrderStatus }))}><option value={order.status}>{orderStatusLabels[order.status]}</option>{nextStatuses[order.status].map(status => <option value={status} key={status}>{orderStatusLabels[status]}</option>)}</select><button className="button dark" disabled={!drafts[order.id] || drafts[order.id] === order.status || savingId === order.id} onClick={() => void updateStatus(order)}><Save size={15} />{savingId === order.id ? 'Đang lưu...' : 'Cập nhật'}</button></div>
+            <div className="admin-order-heading"><div><span className="number-label">{order.orderCode} · {order.orderType === 'REDEMPTION' ? `ĐỔI QUÀ ${order.passportPointsSpent} ĐIỂM` : 'ĐƠN MUA'}</span><strong>{order.customerName}</strong><small>{order.customerEmail} · {date(order.createdAt)}</small></div><strong>{money(order.totalAmount)}</strong></div>
+            <div className="admin-order-shipping"><span>{order.phone}</span><span>{order.shippingAddress}</span>{order.shippingCarrier && <span>Đơn vị vận chuyển: {order.shippingCarrier}</span>}{order.trackingNumber && <span>Mã vận đơn: {order.trackingNumber}</span>}</div>
+            <div className="admin-order-controls"><span className={`order-status order-status-${order.status.toLowerCase()}`}>{orderStatusLabels[order.status]}</span><select aria-label={`Trạng thái ${order.orderCode}`} value={drafts[order.id] ?? order.status} onChange={event => setDrafts(current => ({ ...current, [order.id]: event.target.value as OrderStatus }))}><option value={order.status}>{orderStatusLabels[order.status]}</option>{nextStatuses[order.status].map(status => <option value={status} key={status}>{orderStatusLabels[status]}</option>)}</select>{drafts[order.id] === 'SHIPPED' && <div className="admin-shipping-fields"><label>ĐƠN VỊ VẬN CHUYỂN<input maxLength={100} value={carriers[order.id] ?? ''} placeholder="VD: Giao Hàng Nhanh" onChange={event => setCarriers(current => ({ ...current, [order.id]: event.target.value }))} /></label><label>MÃ VẬN ĐƠN<input maxLength={100} value={trackingNumbers[order.id] ?? ''} placeholder="Nhập mã vận đơn" onChange={event => setTrackingNumbers(current => ({ ...current, [order.id]: event.target.value }))} /></label></div>}<button className="button dark" disabled={!drafts[order.id] || drafts[order.id] === order.status || savingId === order.id || (drafts[order.id] === 'SHIPPED' && (!carriers[order.id]?.trim() || !trackingNumbers[order.id]?.trim()))} onClick={() => void updateStatus(order)}><Save size={15} />{savingId === order.id ? 'Đang lưu...' : 'Cập nhật'}</button></div>
         </article>)}</div>}
     </div></div></div></main>
 }

@@ -27,4 +27,9 @@ public class OrderController {
     public Map<String, Object> list(Authentication authentication) {
         return Map.of("success", true, "data", orders.listMyOrders(authentication.getName()), "message", "Success");
     }
+
+    @PostMapping("/{id}/confirm-received")
+    public Map<String, Object> confirmReceived(@PathVariable Long id, Authentication authentication) {
+        return Map.of("success", true, "data", orders.confirmReceived(authentication.getName(), id), "message", "Receipt confirmed");
+    }
 }

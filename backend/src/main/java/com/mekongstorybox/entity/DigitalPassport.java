@@ -19,4 +19,16 @@ public class DigitalPassport {
     public int getLevel() { return level; }
     public int getExplorationCount() { return explorationCount; }
     public void addExploration(int points) { explorationCount++; totalPoints += points; level = Math.max(1, totalPoints / 500 + 1); updatedAt = LocalDateTime.now(); }
+    public void spendPoints(int points) {
+        if (points <= 0 || totalPoints < points) throw new IllegalArgumentException("Not enough passport points");
+        totalPoints -= points;
+        level = Math.max(1, totalPoints / 500 + 1);
+        updatedAt = LocalDateTime.now();
+    }
+    public void refundPoints(int points) {
+        if (points <= 0) throw new IllegalArgumentException("Refund points must be positive");
+        totalPoints += points;
+        level = Math.max(1, totalPoints / 500 + 1);
+        updatedAt = LocalDateTime.now();
+    }
 }

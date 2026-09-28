@@ -41,6 +41,11 @@ public class CatalogController {
                 "data", result.stream().map(ProductResponse::from).toList(),
                 "message", "Success");
     }
+    @GetMapping("/products/redeemable")
+    public Map<String, Object> redeemableProducts() {
+        var result = products.findByStatusOrderByCreatedAtDesc("ACTIVE");
+        return Map.of("success", true, "data", result.stream().map(ProductResponse::from).toList(), "message", "Success");
+    }
     @GetMapping("/stories") public Map<String, Object> stories(@RequestParam(required = false) String category) { List<Story> result = category == null ? stories.findAll() : stories.findByCategoryIgnoreCaseOrderByCreatedAtDesc(category); return Map.of("success", true, "data", result.stream().map(StoryResponse::from).toList(), "message", "Success"); }
 
     record ProductResponse(Long id, String name, String slug, String description, BigDecimal price, String thumbnailUrl) { static ProductResponse from(Product item) { return new ProductResponse(item.getId(), item.getName(), item.getSlug(), item.getDescription(), item.getPrice(), item.getThumbnailUrl()); } }

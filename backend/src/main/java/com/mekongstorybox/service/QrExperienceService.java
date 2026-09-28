@@ -17,7 +17,7 @@ public class QrExperienceService {
         var user = users.findByEmailIgnoreCase(email).orElseThrow();
         if (scans.existsByQrTokenIdAndUserId(token.getId(), user.getId())) return new Result(true, true, "Experience already unlocked");
         scans.save(new QrScan(token, user));
-        passports.getOrCreate(user).addExploration(100);
+        passports.addExploration(user, 100);
         return new Result(true, true, "Experience unlocked");
     }
     public record Result(boolean valid, boolean counted, String message) {}
