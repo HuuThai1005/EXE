@@ -10,6 +10,8 @@ type Order = {
     orderType: 'PURCHASE' | 'REDEMPTION'
     passportPointsSpent: number
     status: OrderStatus
+    paymentMethod: 'PREPAID_QR' | 'COD' | 'REDEMPTION'
+    paymentStatus: 'PENDING' | 'UNPAID' | 'PAID' | 'NOT_REQUIRED'
     shippingCarrier: string | null
     trackingNumber: string | null
     totalAmount: number
@@ -59,7 +61,7 @@ export default function Orders() {
         {!loading && orders.length > 0 && <div className="order-history-list">{orders.map(order => {
             const currentStep = orderProgressSteps.findIndex(step => step.status === order.status)
             return <article className="order-history-card" key={order.id}>
-                <header className="order-history-header"><div><span className="number-label">{order.orderCode} · {order.orderType === 'REDEMPTION' ? `ĐỔI QUÀ · ${order.passportPointsSpent} ĐIỂM` : 'ĐƠN MUA'}</span><small>Đặt ngày {formatDate(order.createdAt)}</small></div><strong className={`order-status order-status-${order.status.toLowerCase()}`}>{orderStatusLabels[order.status]}</strong></header>
+                <header className="order-history-header"><div><span className="number-label">{order.orderCode} · {order.orderType === 'REDEMPTION' ? `ĐỔI QUÀ · ${order.passportPointsSpent} ĐIỂM` : 'ĐƠN MUA'}</span><small>Đặt ngày {formatDate(order.createdAt)}</small><small className={`payment-status payment-status-${order.paymentStatus.toLowerCase()}`}>{order.paymentMethod === 'PREPAID_QR' ? 'QR chuyển khoản' : order.paymentMethod === 'COD' ? 'Thanh toán khi nhận hàng' : 'Đổi điểm'} · {order.paymentStatus === 'PAID' ? 'Đã thanh toán' : order.paymentStatus === 'PENDING' ? 'Chờ thanh toán' : order.paymentStatus === 'UNPAID' ? 'Thanh toán khi nhận' : 'Không cần thanh toán'}</small></div><strong className={`order-status order-status-${order.status.toLowerCase()}`}>{orderStatusLabels[order.status]}</strong></header>
                 {order.status === 'CANCELLED' ? <p className="order-cancelled-note">Đơn hàng này đã được hủy.</p> : <div className="order-progress" aria-label={`Tiến trình: ${orderStatusLabels[order.status]}`}>
                     {orderProgressSteps.map((step, index) => <div className={`order-progress-step ${index <= currentStep ? 'complete' : ''}`} key={step.status}><span>{index + 1}</span><small>{step.label}</small></div>)}
                 </div>}

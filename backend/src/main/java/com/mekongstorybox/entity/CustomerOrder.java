@@ -15,6 +15,8 @@ public class CustomerOrder {
     @Column(name = "order_code", nullable = false, unique = true, length = 32) private String orderCode;
     @Column(name = "order_type", nullable = false, length = 20) private String orderType;
     @Column(name = "passport_points_spent", nullable = false) private int passportPointsSpent;
+    @Column(name = "payment_method", nullable = false, length = 20) private String paymentMethod;
+    @Column(name = "payment_status", nullable = false, length = 20) private String paymentStatus;
     @Column(name = "customer_name", nullable = false, length = 150) private String customerName;
     @Column(nullable = false, length = 50) private String phone;
     @Column(name = "shipping_address", nullable = false, length = 1000) private String shippingAddress;
@@ -38,12 +40,16 @@ public class CustomerOrder {
         this.status = "PLACED";
         this.orderType = "PURCHASE";
         this.passportPointsSpent = 0;
+        this.paymentMethod = "COD";
+        this.paymentStatus = "UNPAID";
     }
 
     public CustomerOrder(User user, String orderCode, String customerName, String phone, String shippingAddress, int passportPointsSpent) {
         this(user, orderCode, customerName, phone, shippingAddress);
         this.orderType = "REDEMPTION";
         this.passportPointsSpent = passportPointsSpent;
+        this.paymentMethod = "REDEMPTION";
+        this.paymentStatus = "NOT_REQUIRED";
     }
 
     public void addItem(Product product, int quantity) {
@@ -56,6 +62,8 @@ public class CustomerOrder {
 
     public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
     public void updateStatus(String status) { this.status = status; }
+    public void updatePaymentStatus(String paymentStatus) { this.paymentStatus = paymentStatus; }
+    public void setPaymentMethod(String paymentMethod) { this.paymentMethod = paymentMethod; }
     public void updateShipping(String shippingCarrier, String trackingNumber) {
         this.shippingCarrier = shippingCarrier;
         this.trackingNumber = trackingNumber;
@@ -64,6 +72,8 @@ public class CustomerOrder {
     public String getOrderCode() { return orderCode; }
     public String getOrderType() { return orderType; }
     public int getPassportPointsSpent() { return passportPointsSpent; }
+    public String getPaymentMethod() { return paymentMethod; }
+    public String getPaymentStatus() { return paymentStatus; }
     public String getCustomerName() { return customerName; }
     public String getPhone() { return phone; }
     public String getShippingAddress() { return shippingAddress; }

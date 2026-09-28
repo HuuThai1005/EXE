@@ -12,8 +12,9 @@ import Orders from './components/Orders'
 type Story = { id: number; slug: string; title: string; category: string; readingTime: number; coverImage: string; summary: string }
 type Product = { id: number; name: string; slug: string; price: number; thumbnailUrl: string; description: string }
 type CartItem = { product: Product; quantity: number }
-type CheckoutDetails = { customerName: string; phone: string; shippingAddress: string }
-type OrderResult = { orderCode: string; totalAmount: number; passportPointsAwarded: number }
+type PaymentMethod = 'PREPAID_QR' | 'COD'
+type CheckoutDetails = { customerName: string; phone: string; shippingAddress: string; paymentMethod: PaymentMethod }
+type OrderResult = { id: number; orderCode: string; totalAmount: number; passportPointsAwarded: number; paymentMethod: PaymentMethod; paymentStatus: string }
 type ProductPage = { data: Product[]; page: number; size: number; totalPages: number; totalElements: number }
 type DemoQrToken = { token: string; label: string; location: string; description: string }
 const money = (value: number) => new Intl.NumberFormat('vi-VN').format(value) + 'đ'
@@ -156,6 +157,32 @@ function Checkout({ isAuthenticated, hasItems, onOrderComplete }: { isAuthentica
     const [submitting, setSubmitting] = useState(false)
     const [error, setError] = useState('')
     const [order, setOrder] = useState<OrderResult>()
+    const [paymentState, setPaymentState] = useState<'waiting' | 'paid'>('waiting')
+    const [paymentError, setPaymentError] = useState('')
+    useEffect(() => {
+        if (!order || order.paymentMethod !== 'PREPAID_QR' || order.paymentStatus === 'PAID') return
+        const timer = window.setTimeout(async () => {
+            try {
+                const response = await api.post<{ data: { passportPointsAwarded: number } }>(`/orders/${order.id}/simulate-payment`)
+                setOrder(current => current ? { ...current, paymentStatus: 'PAID', passportPointsAwarded: response.data.data.passportPointsAwarded } : current)
+                setPaymentState('paid')
+            } catch {
+                setPaymentError('Không thể xác nhận thanh toán mô phỏng. Đơn vẫn được giữ ở trạng thái chờ thanh toán.')
+            }
+        }, 5000)
+        return () => window.clearTimeout(timer)
+    }, [order?.id, order?.paymentMethod, order?.paymentStatus])
+    const retryPaymentConfirmation = async () => {
+        if (!order) return
+        setPaymentError('')
+        try {
+            const response = await api.post<{ data: { passportPointsAwarded: number } }>(`/orders/${order.id}/simulate-payment`)
+            setOrder(current => current ? { ...current, paymentStatus: 'PAID', passportPointsAwarded: response.data.data.passportPointsAwarded } : current)
+            setPaymentState('paid')
+        } catch {
+            setPaymentError('Không thể xác nhận thanh toán mô phỏng. Vui lòng thử lại.')
+        }
+    }
     const submit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         setError('')
@@ -166,9 +193,10 @@ function Checkout({ isAuthenticated, hasItems, onOrderComplete }: { isAuthentica
                 customerName: String(form.get('customerName')),
                 phone: String(form.get('phone')),
                 shippingAddress: String(form.get('shippingAddress')),
+                paymentMethod: String(form.get('paymentMethod')) as PaymentMethod,
             })
             setOrder(result)
-            setSent(true)
+            if (result.paymentMethod === 'COD') setSent(true)
         } catch (requestError: any) {
             const status = requestError.response?.status
             setError(status === 401
@@ -182,7 +210,7 @@ function Checkout({ isAuthenticated, hasItems, onOrderComplete }: { isAuthentica
             setSubmitting(false)
         }
     }
-    return <main className="page"><div className="section-wrap checkout"><p className="eyebrow">FINAL STEP / CHECKOUT</p>{sent ? <div className="order-success"><div className="success-icon"><Check /></div><h1>Đơn hàng đã<br /><em>được ghi nhận.</em></h1><p>Cảm ơn bạn đã chọn mang một phần miền Tây về nhà. Mã đơn hàng của bạn là <b>{order?.orderCode}</b>.</p><p>Đã cộng {order?.passportPointsAwarded} điểm và 1 lượt vào Digital Passport.</p><Link className="button dark" to="/passport">Mở Digital Passport <ArrowRight size={16} /></Link></div> : <><h1>Đưa câu chuyện<br /><em>về nhà.</em></h1>{!isAuthenticated && <p role="alert">Đăng nhập để đặt hàng và ghi nhận vào Digital Passport. <Link to="/login" state={{ from: '/checkout' }}>Đăng nhập</Link></p>}{!hasItems && <p role="alert">Giỏ hàng đang trống. <Link to="/products">Chọn sản phẩm</Link></p>}{error && <p role="alert">{error}</p>}<form onSubmit={submit}><label>HỌ VÀ TÊN<input name="customerName" required maxLength={150} placeholder="Nguyễn Minh Linh" /></label><label>SỐ ĐIỆN THOẠI<input name="phone" required maxLength={50} placeholder="09xx xxx xxx" /></label><label>ĐỊA CHỈ NHẬN HÀNG<textarea name="shippingAddress" required maxLength={1000} placeholder="Số nhà, đường, phường/xã, tỉnh/thành phố" /></label><button className="button dark" type="submit" disabled={!isAuthenticated || !hasItems || submitting}>{submitting ? 'Đang tạo đơn...' : 'Xác nhận đặt hàng'} <ArrowRight size={16} /></button></form></>}</div></main>
+    return <main className="page"><div className="section-wrap checkout"><p className="eyebrow">FINAL STEP / CHECKOUT</p>{sent ? <div className="order-success"><div className="success-icon"><Check /></div><h1>Đơn hàng đã<br /><em>được ghi nhận.</em></h1><p>Cảm ơn bạn đã chọn mang một phần miền Tây về nhà. Mã đơn hàng của bạn là <b>{order?.orderCode}</b>.</p><p>Thanh toán khi nhận hàng (COD). Vui lòng thanh toán với nhân viên giao hàng khi nhận kiện.</p><p>Passport sẽ cộng 100 điểm sau khi bạn xác nhận nhận hàng.</p><Link className="button dark" to="/orders">Theo dõi đơn hàng <ArrowRight size={16} /></Link></div> : order?.paymentMethod === 'PREPAID_QR' ? <div className="payment-pending"><p className="eyebrow">ORDER {order.orderCode}</p><h1>{paymentState === 'paid' ? <>Thanh toán<br /><em>thành công.</em></> : <>Quét mã để<br /><em>thanh toán.</em></>}</h1>{paymentState === 'waiting' ? <><p>Đơn hàng {order.orderCode} · {money(order.totalAmount)}</p><img className="checkout-payment-qr" src={getQrCodeUrl(`MEKONG STORY BOX|${order.orderCode}|${order.totalAmount}|VND`)} alt={`Mã QR thanh toán đơn ${order.orderCode}`} /><p>Đang chờ ngân hàng xác nhận mô phỏng. Trạng thái sẽ tự cập nhật sau 5 giây.</p>{paymentError && <><p role="alert">{paymentError}</p><button className="button dark" onClick={() => void retryPaymentConfirmation()}>Thử xác nhận lại <ArrowRight size={16} /></button></>}</> : <><div className="success-icon"><Check /></div><p>Đã xác nhận thanh toán {money(order.totalAmount)} cho đơn {order.orderCode}.</p><p>Đã cộng {order.passportPointsAwarded} điểm vào Digital Passport.</p><Link className="button dark" to="/orders">Theo dõi đơn hàng <ArrowRight size={16} /></Link></>}</div> : <><h1>Đưa câu chuyện<br /><em>về nhà.</em></h1>{!isAuthenticated && <p role="alert">Đăng nhập để đặt hàng và ghi nhận vào Digital Passport. <Link to="/login" state={{ from: '/checkout' }}>Đăng nhập</Link></p>}{!hasItems && <p role="alert">Giỏ hàng đang trống. <Link to="/products">Chọn sản phẩm</Link></p>}{error && <p role="alert">{error}</p>}<form className="checkout-form" onSubmit={submit}><label>HỌ VÀ TÊN<input name="customerName" required maxLength={150} placeholder="Nguyễn Minh Linh" /></label><label>SỐ ĐIỆN THOẠI<input name="phone" required maxLength={50} placeholder="09xx xxx xxx" /></label><label>ĐỊA CHỈ NHẬN HÀNG<textarea name="shippingAddress" required maxLength={1000} placeholder="Số nhà, đường, phường/xã, tỉnh/thành phố" /></label><fieldset className="payment-methods"><legend>PHƯƠNG THỨC THANH TOÁN</legend><label className="payment-method-option"><input type="radio" name="paymentMethod" value="PREPAID_QR" defaultChecked /><span><QrCode size={18} /><b>Chuyển khoản QR</b><small>Thanh toán trước khi giao hàng</small></span></label><label className="payment-method-option"><input type="radio" name="paymentMethod" value="COD" /><span><Package size={18} /><b>Thanh toán khi nhận hàng</b><small>Trả tiền trực tiếp khi nhận đơn</small></span></label></fieldset><button className="button dark" type="submit" disabled={!isAuthenticated || !hasItems || submitting}>{submitting ? 'Đang tạo đơn...' : 'Xác nhận đặt hàng'} <ArrowRight size={16} /></button></form></>}</div></main>
 }
 function About() { return <main className="page about"><div className="page-hero compact"><p className="eyebrow">OUR WHY</p><h1>Có một miền Tây<br /><em>luôn ở trong tim.</em></h1><p>Chúng tôi kể những câu chuyện văn hóa bằng ngôn ngữ của thế hệ hôm nay.</p></div><div className="section-wrap about-copy"><p className="large-copy">Mekong Story Box được bắt đầu bởi những người trẻ lớn lên bên dòng sông, nhưng đôi khi quên mất cách lắng nghe nó.</p><p>Chúng tôi tin rằng văn hóa không nằm yên trong bảo tàng. Văn hóa ở trong tiếng máy ghe lúc 5 giờ sáng, trong vị ngọt của trái dừa, trong những bàn tay khéo léo và trong cách một câu chuyện được truyền từ người này sang người khác.</p></div></main> }
 function AuthPage({ mode, onAuthenticated }: { mode: 'login' | 'register'; onAuthenticated: (user: AuthUser) => void }) {

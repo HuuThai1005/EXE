@@ -5,6 +5,7 @@ import com.mekongstorybox.dto.OrderDtos.OrderItemRequest;
 import com.mekongstorybox.dto.OrderDtos.OrderHistoryResponse;
 import com.mekongstorybox.dto.OrderDtos.OrderItemResponse;
 import com.mekongstorybox.dto.OrderDtos.OrderResponse;
+import com.mekongstorybox.dto.OrderDtos.PaymentResponse;
 import com.mekongstorybox.dto.OrderDtos.RedemptionResponse;
 import com.mekongstorybox.dto.OrderDtos.RedeemProductRequest;
 import com.mekongstorybox.dto.OrderDtos.OrderStatusEventResponse;
@@ -66,7 +67,13 @@ public class OrderService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Một hoặc nhiều sản phẩm không còn tồn tại.");
         }
 
+        var paymentMethod = request.paymentMethod().trim().toUpperCase(Locale.ROOT);
+        if (!Set.of("PREPAID_QR", "COD").contains(paymentMethod)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Phương thức thanh toán không hợp lệ.");
+        }
         var order = new CustomerOrder(user, createOrderCode(), request.customerName().trim(), request.phone().trim(), request.shippingAddress().trim());
+        order.setPaymentMethod(paymentMethod);
+        order.updatePaymentStatus("PREPAID_QR".equals(paymentMethod) ? "PENDING" : "UNPAID");
         var total = BigDecimal.ZERO;
         for (var item : requestedItems) {
             var product = productsById.get(item.productId());
@@ -79,9 +86,8 @@ public class OrderService {
         order.setTotalAmount(total);
         orders.save(order);
         statusHistory.save(new CustomerOrderStatusHistory(order, "PLACED", "Đơn hàng đã được tiếp nhận."));
-        passports.addExploration(user, ORDER_PASSPORT_POINTS);
 
-        return new OrderResponse(order.getOrderCode(), total, ORDER_PASSPORT_POINTS);
+        return new OrderResponse(order.getId(), order.getOrderCode(), total, 0, order.getPaymentMethod(), order.getPaymentStatus());
     }
 
     @Transactional
@@ -105,6 +111,27 @@ public class OrderService {
         return new RedemptionResponse(order.getOrderCode(), REWARD_REDEMPTION_POINTS, product.getName());
     }
 
+    @Transactional
+    public PaymentResponse simulateQrPayment(String email, Long orderId) {
+        var user = users.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Vui lòng đăng nhập."));
+        var order = orders.findByIdForUpdate(orderId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng."));
+        if (!order.getUser().getId().equals(user.getId())) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng.");
+        }
+        if (!"PREPAID_QR".equals(order.getPaymentMethod())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Đơn hàng này không thanh toán bằng QR.");
+        }
+        if ("PAID".equals(order.getPaymentStatus())) return toPaymentResponse(order);
+        if (!"PENDING".equals(order.getPaymentStatus()) || order.getCreatedAt().plusSeconds(5).isAfter(java.time.LocalDateTime.now())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Thanh toán QR chưa sẵn sàng. Vui lòng chờ đủ 5 giây.");
+        }
+        order.updatePaymentStatus("PAID");
+        passports.addExploration(user, ORDER_PASSPORT_POINTS);
+        return toPaymentResponse(order);
+    }
+
     @Transactional(readOnly = true)
     public List<OrderHistoryResponse> listMyOrders(String email) {
         var user = users.findByEmailIgnoreCase(email)
@@ -117,13 +144,13 @@ public class OrderService {
         return orders.findAllByOrderByCreatedAtDesc().stream().map(order -> new AdminOrderResponse(
             order.getId(), order.getOrderCode(), order.getOrderType(), order.getCustomerName(), order.getUser().getEmail(),
                 order.getPhone(), order.getShippingAddress(), order.getShippingCarrier(), order.getTrackingNumber(),
-                order.getTotalAmount(), order.getStatus(), order.getCreatedAt()
+            order.getPaymentMethod(), order.getPaymentStatus(), order.getTotalAmount(), order.getStatus(), order.getCreatedAt()
         )).toList();
     }
 
     @Transactional
     public AdminOrderResponse updateStatus(Long orderId, String requestedStatus, String shippingCarrier, String trackingNumber) {
-        var order = orders.findById(orderId)
+        var order = orders.findByIdForUpdate(orderId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng."));
         var nextStatus = requestedStatus.trim().toUpperCase(Locale.ROOT);
         if ("SHIPPED".equals(nextStatus)
@@ -134,6 +161,10 @@ public class OrderService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Trạng thái đơn hàng không hợp lệ hoặc không thể chuyển tiếp.");
         }
         if (!order.getStatus().equals(nextStatus)) {
+            if ("PROCESSING".equals(nextStatus) && "PREPAID_QR".equals(order.getPaymentMethod())
+                    && !"PAID".equals(order.getPaymentStatus())) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "Chỉ xử lý đơn QR sau khi thanh toán thành công.");
+            }
             if ("SHIPPED".equals(nextStatus)) {
                 order.updateShipping(shippingCarrier.trim(), trackingNumber.trim());
             }
@@ -153,7 +184,7 @@ public class OrderService {
     public OrderHistoryResponse confirmReceived(String email, Long orderId) {
         var user = users.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Vui lòng đăng nhập."));
-        var order = orders.findById(orderId)
+        var order = orders.findByIdForUpdate(orderId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng."));
         if (!order.getUser().getId().equals(user.getId())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy đơn hàng.");
@@ -162,6 +193,10 @@ public class OrderService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Chỉ có thể xác nhận nhận hàng khi đơn đang vận chuyển.");
         }
         order.updateStatus("DELIVERED");
+        if ("COD".equals(order.getPaymentMethod())) {
+            order.updatePaymentStatus("PAID");
+            passports.addExploration(user, ORDER_PASSPORT_POINTS);
+        }
         statusHistory.save(new CustomerOrderStatusHistory(order, "DELIVERED", "Khách hàng xác nhận đã nhận hàng."));
         return toOrderHistory(List.of(order)).getFirst();
     }
@@ -169,7 +204,13 @@ public class OrderService {
     private AdminOrderResponse toAdminOrder(CustomerOrder order) {
         return new AdminOrderResponse(order.getId(), order.getOrderCode(), order.getOrderType(), order.getCustomerName(),
                 order.getUser().getEmail(), order.getPhone(), order.getShippingAddress(), order.getShippingCarrier(),
-                order.getTrackingNumber(), order.getTotalAmount(), order.getStatus(), order.getCreatedAt());
+                order.getTrackingNumber(), order.getPaymentMethod(), order.getPaymentStatus(), order.getTotalAmount(), order.getStatus(), order.getCreatedAt());
+    }
+
+    private PaymentResponse toPaymentResponse(CustomerOrder order) {
+        var pointsAwarded = "PURCHASE".equals(order.getOrderType()) && "PAID".equals(order.getPaymentStatus())
+            ? ORDER_PASSPORT_POINTS : 0;
+        return new PaymentResponse(order.getId(), order.getOrderCode(), order.getPaymentMethod(), order.getPaymentStatus(), pointsAwarded);
     }
 
     private List<OrderHistoryResponse> toOrderHistory(List<CustomerOrder> customerOrders) {
@@ -186,7 +227,8 @@ public class OrderService {
             var items = order.getItems().stream()
                     .map(item -> new OrderItemResponse(item.getProductName(), item.getUnitPrice(), item.getQuantity())).toList();
                 return new OrderHistoryResponse(order.getId(), order.getOrderCode(), order.getOrderType(), order.getPassportPointsSpent(),
-                    order.getStatus(), order.getShippingCarrier(), order.getTrackingNumber(), order.getTotalAmount(), order.getCreatedAt(), items, history);
+                    order.getStatus(), order.getPaymentMethod(), order.getPaymentStatus(), order.getShippingCarrier(), order.getTrackingNumber(),
+                    order.getTotalAmount(), order.getCreatedAt(), items, history);
         }).toList();
     }
 

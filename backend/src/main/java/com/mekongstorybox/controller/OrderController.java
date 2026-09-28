@@ -32,4 +32,9 @@ public class OrderController {
     public Map<String, Object> confirmReceived(@PathVariable Long id, Authentication authentication) {
         return Map.of("success", true, "data", orders.confirmReceived(authentication.getName(), id), "message", "Receipt confirmed");
     }
+
+    @PostMapping("/{id}/simulate-payment")
+    public Map<String, Object> simulatePayment(@PathVariable Long id, Authentication authentication) {
+        return Map.of("success", true, "data", orders.simulateQrPayment(authentication.getName(), id), "message", "Payment successful");
+    }
 }
