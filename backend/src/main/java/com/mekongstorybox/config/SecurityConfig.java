@@ -62,6 +62,8 @@ public class SecurityConfig {
                                 "/api/auth/login"
                         ).permitAll()
 
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                         .requestMatchers(
                                 "/api/qr/verify"
                         ).authenticated()
@@ -102,7 +104,10 @@ public class SecurityConfig {
         var config = new CorsConfiguration();
 
         config.setAllowedOrigins(
-                List.of("http://localhost:5173")
+                List.of(
+                        "http://localhost:5173",
+                        "http://127.0.0.1:5173"
+                )
         );
 
         config.setAllowedMethods(

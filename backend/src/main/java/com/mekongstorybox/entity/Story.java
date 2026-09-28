@@ -1,6 +1,7 @@
 package com.mekongstorybox.entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "stories")
@@ -12,7 +13,9 @@ public class Story {
     private String category;
     @Column(name = "cover_image") private String coverImage;
     @Column(name = "reading_time") private Integer readingTime;
-    @Column(name = "created_at") private java.time.LocalDateTime createdAt;
+    @Column(name = "created_at") private LocalDateTime createdAt;
+    @PrePersist
+    void onCreate() { if (createdAt == null) createdAt = LocalDateTime.now(); }
     public Long getId() { return id; }
     public String getTitle() { return title; }
     public String getSlug() { return slug; }

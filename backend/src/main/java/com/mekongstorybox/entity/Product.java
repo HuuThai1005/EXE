@@ -2,6 +2,7 @@ package com.mekongstorybox.entity;
 
 import jakarta.persistence.*;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "products")
@@ -13,13 +14,23 @@ public class Product {
     private BigDecimal price;
     @Column(name = "thumbnail_url") private String thumbnailUrl;
     private String status;
-    @Column(name = "created_at") private java.time.LocalDateTime createdAt;
+    @Column(name = "created_at") private LocalDateTime createdAt;
+    @Column(name = "updated_at") private LocalDateTime updatedAt;
+    @PrePersist
+    void onCreate() {
+        LocalDateTime now = LocalDateTime.now();
+        if (createdAt == null) createdAt = now;
+        if (updatedAt == null) updatedAt = now;
+    }
+    @PreUpdate
+    void onUpdate() { updatedAt = LocalDateTime.now(); }
     public Long getId() { return id; }
     public String getName() { return name; }
     public String getSlug() { return slug; }
     public String getDescription() { return description; }
     public BigDecimal getPrice() { return price; }
     public String getThumbnailUrl() { return thumbnailUrl; }
+    public String getStatus() { return status; }
     public void setName(String name) { this.name = name; }
     public void setSlug(String slug) { this.slug = slug; }
     public void setDescription(String description) { this.description = description; }
