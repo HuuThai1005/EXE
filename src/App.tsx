@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
 import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { ArrowRight, Camera, Check, ChevronDown, Compass, Crown, FileText, Gift, Globe, Menu, Minus, Package, Plus, QrCode, ShieldCheck, ShoppingBag, Stamp, X } from 'lucide-react'
+import { ArrowRight, BookOpen, Camera, Check, Compass, Cookie, FileText, Gift, Globe, Heart, Leaf, Lock, Mail, Map as MapIcon, MapPin, Menu, Minus, Package, Palmtree, Plus, QrCode, ShieldCheck, ShoppingBag, Stamp, Sun, X } from 'lucide-react'
 import { api } from './services/api'
 import { AuthUser, currentUser, login, logout, register } from './services/authService'
 import QrScanner from './components/QrScanner'
@@ -36,31 +37,195 @@ const demoQrTokens: DemoQrToken[] = [
     { token: 'southern-music-004', label: 'Southern Music #004', location: 'River Stage', description: 'Giai điệu sông nước' },
 ]
 const getQrCodeUrl = (token: string) => `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(token)}`
+const provinces = ['Cần Thơ', 'Bến Tre', 'Vĩnh Long', 'An Giang', 'Đồng Tháp', 'Sóc Trăng', 'Tiền Giang', 'Cà Mau', 'Bạc Liêu', 'Kiên Giang', 'Trà Vinh', 'Hậu Giang', 'Long An']
+const boxContents: [typeof Mail, string, string][] = [
+    [Mail, 'Postcard Cần Thơ', 'Bưu thiếp vẽ tay chợ nổi Cái Răng lúc bình minh.'],
+    [MapIcon, 'Bản đồ sông nước', 'Tấm bản đồ in giấy dó dẫn lối qua những con kênh.'],
+    [Cookie, 'Đặc sản địa phương', 'Kẹo dừa, bánh pía, mứt — vị ngọt của miệt vườn.'],
+    [Palmtree, 'Đồ thủ công', 'Món quà đan lục bình, tre, dừa từ làng nghề.'],
+    [BookOpen, 'Thẻ câu chuyện', 'Một mẩu ký ức từ người làm ra món quà.'],
+    [Stamp, 'Digital Passport', 'Quét mã, đóng dấu, tích điểm cho mỗi chuyến đi.'],
+]
+const journeySteps: [string, string, string, typeof Package][] = [
+    ['01', 'Mở hộp', 'Chạm vào hương vị đất phù sa, mùi lá dừa và giấy dó.', Package],
+    ['02', 'Quét mã', 'Bước vào không gian số của người làm ra món quà.', QrCode],
+    ['03', 'Đóng dấu', 'Mỗi lần khám phá là một con dấu trong Digital Passport.', Stamp],
+    ['04', 'Đổi quà', 'Tích đủ 500 điểm, đổi lấy một Story Box mới.', Gift],
+]
+function Wave({ className = '' }: { className?: string }) {
+    return <svg className={'wave ' + className} viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true"><path d="M0 50 C 180 10 360 90 540 50 S 900 10 1080 50 S 1320 85 1440 45 V90 H0 Z" /></svg>
+}
 function Shell({ children, cartCount, user, onLogout }: { children: React.ReactNode; cartCount: number; user?: AuthUser; onLogout: () => void }) {
     const [open, setOpen] = useState(false)
+    const [scrolled, setScrolled] = useState(false)
     const location = useLocation()
+    useEffect(() => { setOpen(false); window.scrollTo(0, 0) }, [location.pathname])
+    useEffect(() => { const onScroll = () => setScrolled(window.scrollY > 24); onScroll(); window.addEventListener('scroll', onScroll); return () => window.removeEventListener('scroll', onScroll) }, [])
     if (location.pathname.startsWith('/admin')) return <div className="admin-app-shell">{children}</div>
-    return <div className="app-shell">
-        <header className="topbar">
-            <Link to="/" className="brand"><span className="brand-mark">MS</span><span>MEKONG<br /><b>STORY BOX</b></span></Link>
+    const onHome = location.pathname === '/'
+    const isActive = (...paths: string[]) => paths.some(path => location.pathname === path || location.pathname.startsWith(path + '/')) ? 'active' : ''
+    return <div className={'app-shell' + (onHome ? ' on-home' : '')}>
+        <header className={'topbar' + (scrolled || !onHome || open ? ' solid' : '')}>
+            <Link to="/" className="brand"><span className="brand-mark"><Sun size={18} /></span><span>MEKONG<b>Story Box</b></span></Link>
             <nav className={open ? 'nav open' : 'nav'}>
-                <Link className={location.pathname === '/' ? 'active' : ''} to="/">Trang chủ</Link><Link className={location.pathname === '/products' || location.pathname === '/story-box' ? 'active' : ''} to="/products">Sản phẩm</Link><Link to="/stories">Câu chuyện</Link><Link to="/passport">Digital Passport</Link>{user && <Link className={location.pathname === '/orders' ? 'active' : ''} to="/orders">Đơn hàng</Link>}<Link to="/about">Về chúng tôi</Link>
+                <Link className={onHome ? 'active' : ''} to="/">Trang chủ</Link>
+                <Link className={isActive('/products', '/story-box')} to="/products">Story Box</Link>
+                <Link className={isActive('/stories')} to="/stories">Câu chuyện</Link>
+                <Link className={isActive('/passport')} to="/passport">Passport</Link>
+                {user && <Link className={isActive('/orders')} to="/orders">Đơn hàng</Link>}
+                <Link className={isActive('/about')} to="/about">Về chúng tôi</Link>
             </nav>
-            <div className="header-actions"><button className="language">VI <ChevronDown size={14} /></button>{user ? <button className="user-action" onClick={onLogout}>{user.fullName} · Thoát</button> : <Link className="user-action" to="/login">Đăng nhập</Link>}<Link aria-label="Giỏ hàng" className="icon-btn cart-link" to="/cart"><ShoppingBag size={19} />{cartCount > 0 && <span>{cartCount}</span>}</Link><button className="menu-btn" onClick={() => setOpen(!open)}>{open ? <X /> : <Menu />}</button></div>
-        </header>{children}
-        <footer><div><Link className="brand footer-brand" to="/"><span className="brand-mark">MS</span><span>MEKONG<br /><b>STORY BOX</b></span></Link><p>Một chuyến về miền Tây,<br />nằm trong một chiếc hộp.</p></div><div><strong>Khám phá</strong><Link to="/products">Sản phẩm</Link><Link to="/stories">Câu chuyện</Link><Link to="/passport">Digital Passport</Link></div><div><strong>Theo dõi hành trình</strong><p className="social"><Globe size={18} /><Globe size={18} /></p><small>© 2024 Mekong Story Box</small></div></footer>
+            <div className="header-actions">
+                <Link className="icon-btn scan-link" aria-label="Quét QR" to="/experience"><QrCode size={18} /></Link>
+                {user ? <button className="user-action" onClick={onLogout}>{user.fullName} · Thoát</button> : <Link className="user-action" to="/login">Đăng nhập</Link>}
+                <Link aria-label="Giỏ hàng" className="icon-btn cart-link" to="/cart"><ShoppingBag size={18} />{cartCount > 0 && <span>{cartCount}</span>}</Link>
+                <button className="menu-btn" aria-label="Menu" onClick={() => setOpen(!open)}>{open ? <X /> : <Menu />}</button>
+            </div>
+        </header>
+        {children}
+        <footer>
+            <Wave className="footer-wave" />
+            <div className="footer-inner">
+                <div><Link className="brand footer-brand" to="/"><span className="brand-mark"><Sun size={18} /></span><span>MEKONG<b>Story Box</b></span></Link><p className="footer-tagline">Một chuyến về miền Tây,<br /><em>nằm trong một chiếc hộp.</em></p></div>
+                <div><strong>Khám phá</strong><Link to="/products">Story Box</Link><Link to="/stories">Câu chuyện</Link><Link to="/passport">Digital Passport</Link><Link to="/experience">Quét mã QR</Link></div>
+                <div><strong>Bến đỗ</strong><p><MapPin size={15} /> Đại học FPT Cần Thơ</p><p><Mail size={15} /> hello@mekongstorybox.vn</p></div>
+                <div><strong>Theo dòng sông</strong><p className="social"><a href="#" aria-label="Website"><Globe size={17} /></a><a href="#" aria-label="Email"><Mail size={17} /></a></p></div>
+            </div>
+            <div className="footer-bottom"><small>© 2026 Mekong Story Box</small><small>Làm bằng thương nhớ ở đồng bằng sông Cửu Long</small></div>
+        </footer>
+    </div>
+}
+
+const fadeInUp = { hidden: { opacity: 0, y: 32 }, visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] as const } } }
+const stagger = { visible: { transition: { staggerChildren: 0.12 } } }
+const reveal = { initial: 'hidden', whileInView: 'visible', viewport: { once: true, margin: '-80px' }, variants: stagger } as const
+
+const fallingLeaves = [
+    { left: '58%', delay: 0.8, duration: 9, drift: [0, 50, -20, 60, 20], spin: [-20, 25, -10, 40, 15], colors: ['#7fae4a', '#3f7a2e'] },
+    { left: '80%', delay: 2.6, duration: 10.5, drift: [0, -45, 25, -35, -10], spin: [30, -15, 35, -5, 50], colors: ['#f0b24a', '#c9782b'] },
+]
+function FallingLeaves() {
+    return <div className="falling-leaves" aria-hidden="true">
+        {fallingLeaves.map((leaf, index) => <motion.svg key={index} className="falling-leaf" style={{ left: leaf.left }} viewBox="0 0 40 64" width="34" height="54"
+            initial={{ y: '-12vh', opacity: 0 }}
+            animate={{ y: ['-12vh', '96vh'], x: leaf.drift, rotate: leaf.spin, scaleX: [1, 0.45, 1, 0.55, 1], opacity: [0, 1, 1, 1, 0] }}
+            transition={{ delay: leaf.delay, duration: leaf.duration, ease: 'easeInOut', times: [0, 0.25, 0.5, 0.75, 1] }}>
+            <defs><linearGradient id={`leaf-${index}`} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor={leaf.colors[0]} /><stop offset="1" stopColor={leaf.colors[1]} /></linearGradient></defs>
+            <path d="M20 2 C 36 16 38 40 20 60 C 2 40 4 16 20 2 Z" fill={`url(#leaf-${index})`} />
+            <path d="M20 6 V 62 M20 22 L 29 15 M20 32 L 31 24 M20 42 L 29 36 M20 22 L 11 15 M20 32 L 9 24 M20 42 L 11 36" stroke="rgba(255,255,255,.45)" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+        </motion.svg>)}
     </div>
 }
 
 function Home({ addToCart }: { addToCart: (product: Product) => void }) {
-    const navigate = useNavigate(); const [stories, setStories] = useState<Story[]>([]); const [product, setProduct] = useState<Product>(); useEffect(() => { getStories().then(setStories).catch(() => setStories([])); getProduct().then(setProduct).catch(() => undefined) }, []); return <main>
-        <section className="hero"><div className="hero-copy"><p className="eyebrow"><span /> CULTURAL EXPERIENCE PLATFORM</p><h1>Một chuyến về<br /><em>miền Tây,</em><br />nằm trong một chiếc hộp.</h1><p className="hero-lead">Khám phá hương vị, câu chuyện và ký ức miền sông nước — theo một cách hoàn toàn mới.</p><div className="button-row"><button className="button primary" onClick={() => navigate('/story-box')}>Khám phá Story Box <ArrowRight size={17} /></button><button className="text-button" onClick={() => navigate('/experience')}><QrCode size={17} /> Trải nghiệm miền Tây</button></div></div><div className="hero-art"><div className="sun" /><div className="water" /><div className="leaf leaf-one">✦</div><div className="box-visual"><div className="box-label"><span>MEKONG</span><b>STORY<br />BOX</b><small>CAN THO · 001</small></div></div><span className="art-note note-one">stories<br />from the river</span><span className="art-note note-two">est. 2024</span></div><div className="hero-scroll">SCROLL TO EXPLORE <ArrowRight size={14} /></div></section>
-        <section className="intro section-wrap"><div className="section-kicker">01 / THE IDEA</div><div className="intro-grid"><h2>Bạn không mua<br />một chiếc hộp.<br /><em>Bạn mua một câu chuyện.</em></h2><div><p className="large-copy">Story Box là một chuyến du lịch miền Tây thu nhỏ — nơi mỗi món quà mở ra một vùng đất, một người làm ra nó, và một ký ức đáng được kể.</p><Link className="under-link" to="/about">Tìm hiểu câu chuyện của chúng tôi <ArrowRight size={15} /></Link></div></div><div className="steps">{[['01', 'UNBOX', 'Mở hộp và khám phá những món quà từ miền Tây.'], ['02', 'SCAN', 'Quét QR để bước vào trải nghiệm số.'], ['03', 'DISCOVER', 'Khám phá câu chuyện phía sau từng món quà.']].map(([n, t, d]) => <div className="step" key={n}><span>{n}</span><h3>{t}</h3><p>{d}</p></div>)}</div></section>
-        {product && <section className="featured section-wrap"><div className="section-kicker">02 / THE FIRST JOURNEY</div><div className="featured-grid"><div className="product-photo"><img src={product.thumbnailUrl} alt={product.name} /><span className="photo-stamp">CẦN THƠ<br />#001</span></div><div className="product-info"><p className="eyebrow">{product.name}</p><h2>Nhịp sống<br /><em>trên sông Hậu.</em></h2><p>{product.description}</p><div className="product-meta"><strong>{money(product.price)}</strong><span>6 món quà · 1 hành trình</span></div><button className="button dark" onClick={() => addToCart(product)}>Thêm vào giỏ <ShoppingBag size={16} /></button><Link className="under-link" to="/story-box">Xem chi tiết sản phẩm <ArrowRight size={15} /></Link></div></div></section>}
-        <section className="stories-band"><div className="section-wrap"><div className="band-heading"><div><div className="section-kicker">03 / FROM THE DELTA</div><h2>Những câu chuyện<br /><em>đáng để mang về.</em></h2></div><Link className="under-link light-link" to="/stories">Xem tất cả câu chuyện <ArrowRight size={15} /></Link></div><div className="story-grid">{stories.slice(0, 3).map(story => <StoryCard story={story} key={story.id} />)}</div></div></section>
+    const navigate = useNavigate(); const [stories, setStories] = useState<Story[]>([]); const [product, setProduct] = useState<Product>()
+    useEffect(() => { getStories().then(setStories).catch(() => setStories([])); getProduct().then(setProduct).catch(() => undefined) }, [])
+
+    return <main className="mekong-home">
+        <section className="mekong-hero">
+            <motion.img className="hero-bg" src="/mekong_hero.png" alt="" initial={{ scale: 1.12 }} animate={{ scale: 1 }} transition={{ duration: 2.4, ease: 'easeOut' }} />
+            <div className="hero-shade" />
+            <FallingLeaves />
+            <motion.div initial="hidden" animate="visible" variants={stagger} className="hero-content">
+                <motion.p variants={fadeInUp} className="hero-eyebrow"><Sun size={15} /> Đồng bằng sông Cửu Long</motion.p>
+                <motion.h1 variants={fadeInUp} className="hero-title">Một chuyến về miền Tây,<br /><em>nằm trong một chiếc hộp.</em></motion.h1>
+                <motion.p variants={fadeInUp} className="hero-subtitle">Mở nắp hộp, nghe tiếng ghe máy lúc năm giờ sáng, nếm vị ngọt kẹo dừa và mang theo câu chuyện của những người sống bên dòng Cửu Long.</motion.p>
+                <motion.div variants={fadeInUp} className="hero-actions">
+                    <button className="btn-mekong" onClick={() => navigate('/story-box')}>Chọn Story Box <ArrowRight size={18} /></button>
+                    <button className="btn-mekong-outline" onClick={() => navigate('/experience')}><QrCode size={18} /> Quét mã trải nghiệm</button>
+                </motion.div>
+            </motion.div>
+            <motion.div className="hero-ticket" initial={{ opacity: 0, rotate: 8, y: 30 }} animate={{ opacity: 1, rotate: 4, y: 0 }} transition={{ delay: 0.9, duration: 0.9 }}>
+                <span>VÉ ĐÒ / BOARDING</span><strong>CẦN THƠ<br />#001</strong><small>Chợ nổi Cái Răng · 05:00</small>
+            </motion.div>
+            <Wave className="hero-wave" />
+        </section>
+
+        <div className="province-ticker" aria-hidden="true"><div>{[...provinces, ...provinces].map((name, index) => <span key={index}>{name}<i>✦</i></span>)}</div></div>
+
+        <section className="mekong-inbox section-wrap">
+            <motion.div {...reveal} className="section-heading">
+                <motion.span variants={fadeInUp} className="mekong-label">01 · Trong hộp có gì</motion.span>
+                <motion.h2 variants={fadeInUp}>Sáu món quà,<br /><em>một miền sông nước.</em></motion.h2>
+                <motion.p variants={fadeInUp}>Mỗi Story Box là một chuyến du lịch thu nhỏ — được gói ghém bởi những người trẻ lớn lên bên bờ kênh.</motion.p>
+            </motion.div>
+            <motion.div {...reveal} className="inbox-grid">
+                {boxContents.map(([Icon, title, text], index) => <motion.article variants={fadeInUp} className="inbox-item" key={title}><span className="inbox-index">0{index + 1}</span><Icon size={26} /><h3>{title}</h3><p>{text}</p></motion.article>)}
+            </motion.div>
+        </section>
+
+        <section className="mekong-journey">
+            <Wave className="journey-wave-top" />
+            <div className="section-wrap">
+                <motion.div {...reveal} className="journey-header">
+                    <motion.span variants={fadeInUp} className="mekong-label light">02 · Xuôi dòng trải nghiệm</motion.span>
+                    <motion.h2 variants={fadeInUp}>Không chỉ là quà tặng.<br /><em>Đó là một chuyến đò.</em></motion.h2>
+                </motion.div>
+                <motion.div {...reveal} className="journey-steps">
+                    {journeySteps.map(([n, t, d, Icon]) => <motion.div variants={fadeInUp} className="journey-step" key={n}><div className="journey-dot"><Icon size={20} /></div><strong>{n}</strong><h3>{t}</h3><p>{d}</p></motion.div>)}
+                </motion.div>
+            </div>
+            <Wave className="journey-wave" />
+        </section>
+
+        <section className="mekong-featured section-wrap">
+            <motion.div {...reveal} className="featured-wrapper">
+                <motion.div variants={fadeInUp} className="featured-image">
+                    <img src={product?.thumbnailUrl || '/storybox_product.png'} alt={product?.name ?? 'Mekong Story Box'} onError={event => { event.currentTarget.src = '/storybox_product.png' }} />
+                    <div className="featured-stamp"><span>MEKONG</span><strong>#001</strong><span>CẦN THƠ</span></div>
+                </motion.div>
+                <motion.div variants={stagger} className="featured-content">
+                    <motion.span variants={fadeInUp} className="mekong-label">03 · Hộp nổi bật</motion.span>
+                    <motion.h2 variants={fadeInUp}>{product?.name ?? 'Mekong Story Box — Cần Thơ #001'}</motion.h2>
+                    <motion.p variants={fadeInUp}>{product?.description || 'Hộp tre đan thủ công, bên trong là trà trái cây miệt vườn, kẹo dừa Bến Tre, hạt sen vàng và thẻ Digital Passport.'}</motion.p>
+                    <motion.ul variants={fadeInUp} className="featured-list"><li><Leaf size={16} /> Bao bì tre, lục bình tái chế</li><li><Heart size={16} /> Sản phẩm từ hộ làm nghề địa phương</li><li><Stamp size={16} /> Tích điểm Passport với mỗi hộp</li></motion.ul>
+                    <motion.div variants={fadeInUp} className="featured-price">
+                        {product && <strong>{money(product.price)}</strong>}
+                        <span>6 món quà · 1 hành trình</span>
+                    </motion.div>
+                    <motion.div variants={fadeInUp} className="featured-actions">
+                        {product ? <button className="btn-mekong" onClick={() => addToCart(product)}>Thêm vào giỏ <ShoppingBag size={18} /></button> : <button className="btn-mekong" onClick={() => navigate('/products')}>Xem bộ sưu tập <ArrowRight size={18} /></button>}
+                        <Link to="/story-box" className="link-mekong">Tất cả Story Box <ArrowRight size={18} /></Link>
+                    </motion.div>
+                </motion.div>
+            </motion.div>
+        </section>
+
+        <section className="mekong-map section-wrap">
+            <motion.div {...reveal} className="map-card">
+                <motion.div variants={fadeInUp} className="map-copy">
+                    <span className="mekong-label light">04 · Bản đồ hành trình</span>
+                    <h2>Mười ba tỉnh thành,<br /><em>mười ba chiếc hộp.</em></h2>
+                    <p>Mỗi mùa, chúng tôi xuôi về một bến sông mới. Cần Thơ là chuyến đầu tiên — những chuyến kế tiếp đang được chuẩn bị.</p>
+                </motion.div>
+                <motion.div variants={fadeInUp} className="map-chips">
+                    {provinces.map((name, index) => <span className={index === 0 ? 'open' : index < 3 ? 'soon' : ''} key={name}><MapPin size={13} /> {name}<small>{index === 0 ? 'Đang mở' : index < 3 ? 'Sắp cập bến' : `#${String(index + 1).padStart(3, '0')}`}</small></span>)}
+                </motion.div>
+            </motion.div>
+        </section>
+
+        <section className="mekong-stories section-wrap">
+            <motion.div {...reveal} className="stories-header">
+                <div>
+                    <motion.span variants={fadeInUp} className="mekong-label">05 · Chuyện bên bờ</motion.span>
+                    <motion.h2 variants={fadeInUp}>Những mẩu chuyện<br /><em>dọc đôi bờ sông.</em></motion.h2>
+                </div>
+                <motion.div variants={fadeInUp}><Link to="/stories" className="link-mekong">Tất cả câu chuyện <ArrowRight size={18} /></Link></motion.div>
+            </motion.div>
+            <motion.div {...reveal} className="mekong-stories-grid">
+                {stories.slice(0, 3).map(story => <motion.div variants={fadeInUp} key={story.id}><StoryCard story={story} /></motion.div>)}
+            </motion.div>
+            {stories.length === 0 && <p className="muted-note">Những câu chuyện đang trên đường về bến…</p>}
+        </section>
+
+        <section className="passport-cta section-wrap">
+            <div className="passport-cta-card">
+                <div><span className="mekong-label light">Digital Passport</span><h2>Mỗi con dấu<br /><em>là một bến sông.</em></h2><p>Quét mã QR trong hộp để mở khóa câu chuyện, nhận điểm và sưu tầm huy hiệu Chợ nổi, Miệt vườn, Đờn ca tài tử…</p></div>
+                <div className="passport-cta-actions"><button className="btn-mekong" onClick={() => navigate('/passport')}>Mở Passport <Compass size={18} /></button><button className="btn-mekong-outline" onClick={() => navigate('/experience/demo')}>Thử QR demo</button></div>
+            </div>
+        </section>
     </main>
 }
-
 function StoryCard({ story }: { story: Story }) { return <Link to={'/stories/' + story.slug} className="story-card"><div className="story-image"><img src={story.coverImage} alt={story.title} /><span>{story.category}</span></div><div className="story-card-body"><small>{story.readingTime} phút đọc</small><h3>{story.title}</h3><p>{story.summary}</p><ArrowRight size={17} /></div></Link> }
 function StoryBox({ addToCart }: { addToCart: (product: Product) => void }) {
     const [products, setProducts] = useState<Product[]>([])
@@ -86,7 +251,23 @@ function DemoQrList() {
 }
 
 function QRExperience() { const [done, setDone] = useState(false); const [error, setError] = useState(''); const [loading, setLoading] = useState(false); const { token } = useParams(); const navigate = useNavigate(); const verify = async () => { setLoading(true); setError(''); try { const response = await api.post<{ data: { valid: boolean } }>('/qr/verify', { token }); if (response.data.data.valid) setDone(true); else setError('QR code không hợp lệ hoặc đã bị vô hiệu hóa.'); } catch (requestError: any) { setError(requestError.response?.status === 401 ? 'Vui lòng đăng nhập trước khi scan QR.' : 'QR code này chưa được kích hoạt hoặc không tồn tại.'); } finally { setLoading(false); } }; return <main className="experience qr-page"><div className="journey-card">{!done ? <><div className="success-icon"><QrCode size={31} /></div><p className="eyebrow">QR VERIFICATION / CẦN THƠ #001</p><h1>Your Mekong<br /><em>journey begins.</em></h1><p>Mã QR đã sẵn sàng mở ra một câu chuyện từ chợ nổi Cái Răng.</p>{error && <><p role="alert">{error}</p>{error.includes('đăng nhập') && <Link className="under-link" to="/login">Đăng nhập để tiếp tục <ArrowRight size={15} /></Link>}</>}<button className="button dark" onClick={verify} disabled={loading}>{loading ? 'Đang xác thực...' : 'Xác thực QR'} <Check size={17} /></button></> : <><div className="success-icon"><Check size={31} /></div><p className="eyebrow">EXPERIENCE UNLOCKED</p><h1>Chào mừng bạn<br /><em>về miền Tây.</em></h1><p>Lần khám phá đã được ghi vào Digital Passport của bạn.</p><div className="reward"><Stamp size={20} /><span>EXPERIENCE COUNTED</span><strong>+100 điểm</strong></div><button className="button dark" onClick={() => navigate('/passport')}>Mở Digital Passport <ArrowRight size={17} /></button></>}</div></main> }
-function Passport() {
+const POINTS_PER_LEVEL = 500
+const passportStamps = [
+    { icon: '🛶', name: 'Chợ nổi', place: 'Cái Răng · Cần Thơ', color: 'sun' },
+    { icon: '🥥', name: 'Xứ dừa', place: 'Mỏ Cày · Bến Tre', color: 'leaf' },
+    { icon: '🌿', name: 'Miệt vườn', place: 'Cù lao An Bình · Vĩnh Long', color: 'river' },
+    { icon: '🎵', name: 'Đờn ca tài tử', place: 'Bạc Liêu', color: 'lotus' },
+    { icon: '🪷', name: 'Đồng sen', place: 'Tháp Mười · Đồng Tháp', color: 'lotus' },
+    { icon: '🍜', name: 'Hủ tiếu', place: 'Mỹ Tho · Tiền Giang', color: 'sun' },
+    { icon: '⛰️', name: 'Thất Sơn', place: 'Tri Tôn · An Giang', color: 'river' },
+    { icon: '🌅', name: 'Mũi Cà Mau', place: 'Đất Mũi · Cà Mau', color: 'leaf' },
+]
+const passportRanks = ['Khách đò', 'Người miệt vườn', 'Bạn ghe', 'Lái ghe', 'Chủ ghe', 'Người giữ chuyện']
+const rankOf = (level: number) => passportRanks[Math.min(Math.max(level, 1), passportRanks.length) - 1]
+const mrzName = (name?: string) => (name ?? 'MEKONG EXPLORER').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/gi, 'D').toUpperCase().replace(/[^A-Z]+/g, '<')
+
+function Passport({ user }: { user?: AuthUser }) {
+    const navigate = useNavigate()
     const [passport, setPassport] = useState<{ totalPoints: number; level: number; explorationCount: number }>()
     const [error, setError] = useState(false)
     useEffect(() => {
@@ -96,12 +277,82 @@ function Passport() {
     }, [])
     const points = passport?.totalPoints ?? 0
     const count = passport?.explorationCount ?? 0
+    const level = passport?.level ?? 1
+    const progress = (points % POINTS_PER_LEVEL) / POINTS_PER_LEVEL * 100
     const handleRedeemed = () => setPassport(current => current ? {
         ...current,
-        totalPoints: current.totalPoints - 500,
-        level: Math.max(1, Math.floor((current.totalPoints - 500) / 500) + 1),
+        totalPoints: current.totalPoints - POINTS_PER_LEVEL,
+        level: Math.max(1, Math.floor((current.totalPoints - POINTS_PER_LEVEL) / POINTS_PER_LEVEL) + 1),
     } : current)
-    return <main className="page passport-page"><div className="passport-head section-wrap"><div><p className="eyebrow">YOUR COLLECTIBLE JOURNEY</p><h1>Digital<br /><em>Passport.</em></h1></div><div className="level-mark"><Crown size={19} /><span>LEVEL {passport?.level ?? 1}</span><strong>{count ? 'MEKONG EXPLORER' : 'READY TO EXPLORE'}</strong></div></div><section className="passport-paper section-wrap"><div className="passport-top"><span>MEKONG STORY BOX</span><span>EXPLORATIONS {count}</span></div><div className="passport-main"><div className="passport-avatar"><Compass size={42} /><small>EXPLORER</small></div><div><p className="eyebrow">{error ? 'SIGN IN TO CONTINUE' : count ? 'YOUR JOURNEY SO FAR' : 'YOUR JOURNEY STARTS HERE'}</p><h2>{count ? <>Your story<br /><em>is growing.</em></> : <>Your passport<br /><em>is waiting.</em></>}</h2><div className="points"><strong>{points.toLocaleString('vi-VN')}</strong><span>POINTS AVAILABLE</span></div></div></div><div className="progress-label"><span>YOUR PROGRESS</span><span>{count} EXPLORATIONS</span></div><div className="progress"><span style={{ width: `${points % 500 / 5}%` }} /></div><div className="badge-row"><div className={'passport-badge ' + (count ? 'unlocked' : 'locked')}><span>🛶</span><b>Floating Market</b><small>{count ? 'UNLOCKED' : 'LOCKED'}</small></div><div className="passport-badge locked"><span>🌿</span><b>Mekong Garden</b><small>LOCKED</small></div><div className="passport-badge locked"><span>🎵</span><b>Southern Music</b><small>LOCKED</small></div><div className="passport-badge locked"><span>🍜</span><b>Mekong Cuisine</b><small>LOCKED</small></div></div></section><PassportRewards points={points} authenticated={!error && Boolean(passport)} onRedeemed={handleRedeemed} /></main>
+    const holder = user?.fullName ?? 'Lữ khách miền Tây'
+    const passportNo = `MSB${String(user?.id ?? 0).padStart(6, '0')}`
+
+    return <main className="page passport-page">
+        <section className="pp-hero">
+            <div className="section-wrap pp-hero-inner">
+                <div>
+                    <p className="eyebrow">Hộ chiếu sông nước</p>
+                    <h1>Digital<br /><em>Passport.</em></h1>
+                    <p>Mỗi chiếc hộp là một bến đỗ. Quét mã QR để đóng dấu, tích điểm và lên hạng trên hải trình Cửu Long.</p>
+                </div>
+                <div className="pp-hero-actions">
+                    <button className="button dark" onClick={() => navigate('/scan')}><Camera size={17} /> Quét QR đóng dấu</button>
+                    <Link className="link-mekong" to="/experience/demo">Xem QR demo <ArrowRight size={16} /></Link>
+                </div>
+            </div>
+        </section>
+
+        {error && <div className="section-wrap"><p className="pp-signin" role="alert">Bạn chưa đăng nhập — hộ chiếu đang để trống. <Link to="/login" state={{ from: '/passport' }}>Đăng nhập để mở hộ chiếu</Link></p></div>}
+
+        <section className="section-wrap">
+            <div className="pp-book">
+                <div className="pp-page pp-identity">
+                    <div className="pp-page-head"><span>CỘNG ĐỒNG MEKONG STORY BOX</span><span>HỘ CHIẾU · PASSPORT</span></div>
+                    <div className="pp-id-body">
+                        <div className="pp-photo"><Compass size={46} /><small>{rankOf(level)}</small></div>
+                        <dl className="pp-fields">
+                            <div><dt>Họ và tên / Name</dt><dd>{holder}</dd></div>
+                            <div><dt>Số hộ chiếu / No.</dt><dd>{passportNo}</dd></div>
+                            <div><dt>Hạng / Rank</dt><dd>{rankOf(level)} · Lv.{level}</dd></div>
+                            <div><dt>Nơi cấp / Issued at</dt><dd>Cần Thơ</dd></div>
+                        </dl>
+                    </div>
+                    <div className="pp-points">
+                        <div><strong>{points.toLocaleString('vi-VN')}</strong><span>điểm hiện có</span></div>
+                        <div><strong>{count}</strong><span>lần khám phá</span></div>
+                        <div><strong>{Math.floor(points / POINTS_PER_LEVEL)}</strong><span>lượt đổi quà</span></div>
+                    </div>
+                    <div className="pp-level">
+                        <div className="pp-level-label"><span>Lv.{level} · {rankOf(level)}</span><span>{POINTS_PER_LEVEL - points % POINTS_PER_LEVEL} điểm nữa tới Lv.{level + 1}</span></div>
+                        <div className="pp-level-track"><span style={{ width: `${progress}%` }} /><i style={{ left: `${progress}%` }}>🛶</i></div>
+                    </div>
+                    <p className="pp-mrz" aria-hidden="true">P&lt;VNM{mrzName(holder)}&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;<br />{passportNo}&lt;{String(points).padStart(6, '0')}&lt;MEKONG&lt;STORY&lt;BOX&lt;&lt;&lt;{level}</p>
+                </div>
+
+                <div className="pp-page pp-stamps">
+                    <div className="pp-page-head"><span>THỊ THỰC · VISAS</span><span>{Math.min(count, passportStamps.length)}/{passportStamps.length} CON DẤU</span></div>
+                    <div className="pp-stamp-grid">
+                        {passportStamps.map((stamp, index) => {
+                            const unlocked = count > index
+                            return <div className={`pp-stamp ${unlocked ? 'unlocked ' + stamp.color : 'locked'}`} style={{ ['--tilt' as string]: `${(index % 3 - 1) * 7}deg` }} key={stamp.name}>
+                                <span className="pp-stamp-icon">{unlocked ? stamp.icon : <Lock size={18} />}</span>
+                                <b>{stamp.name}</b>
+                                <small>{unlocked ? stamp.place : 'Chưa cập bến'}</small>
+                            </div>
+                        })}
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section className="section-wrap pp-earn">
+            <div className="pp-earn-item"><QrCode size={22} /><div><b>Quét QR trong hộp</b><span>+100 điểm · đóng một con dấu</span></div></div>
+            <div className="pp-earn-item"><Package size={22} /><div><b>Nhận Story Box</b><span>+100 điểm khi xác nhận đã nhận hàng</span></div></div>
+            <div className="pp-earn-item"><Gift size={22} /><div><b>Đổi quà</b><span>500 điểm = 1 Story Box miễn phí</span></div></div>
+        </section>
+
+        <PassportRewards points={points} authenticated={!error && Boolean(passport)} onRedeemed={handleRedeemed} />
+    </main>
 }
 
 function PassportRewards({ points, authenticated, onRedeemed }: { points: number; authenticated: boolean; onRedeemed: () => void }) {
@@ -139,12 +390,20 @@ function PassportRewards({ points, authenticated, onRedeemed }: { points: number
             setSubmitting(false)
         }
     }
-    return <section className="section-wrap passport-rewards"><div className="passport-rewards-heading"><div><p className="eyebrow"><Gift size={15} /> REWARD EXCHANGE</p><h2>Đổi điểm<br /><em>lấy quà.</em></h2><p>Đổi 500 điểm lấy một sản phẩm bất kỳ. Phí sản phẩm được thanh toán bằng điểm Passport.</p></div><div className="reward-balance"><strong>{points.toLocaleString('vi-VN')}</strong><span>ĐIỂM CÒN LẠI</span><small>{Math.floor(points / 500)} lượt đổi</small></div></div>
+    const canRedeem = authenticated && points >= POINTS_PER_LEVEL
+    return <section className="section-wrap passport-rewards">
+        <div className="passport-rewards-heading">
+            <div><p className="eyebrow"><Gift size={15} /> Chợ đổi quà</p><h2>Đổi con dấu<br /><em>lấy một chuyến đi mới.</em></h2><p>Mỗi 500 điểm đổi được một Story Box bất kỳ — miễn phí sản phẩm và giao hàng tận nhà.</p></div>
+            <div className="reward-balance"><span>SỐ DƯ</span><strong>{points.toLocaleString('vi-VN')}</strong><small>{canRedeem ? `Đủ cho ${Math.floor(points / POINTS_PER_LEVEL)} lượt đổi` : `Còn thiếu ${(POINTS_PER_LEVEL - points % POINTS_PER_LEVEL).toLocaleString('vi-VN')} điểm`}</small></div>
+        </div>
         {success && <p className="reward-feedback success" role="status">{success} <Link to="/orders">Theo dõi đơn hàng <ArrowRight size={14} /></Link></p>}
         {error && !selectedProduct && <p className="reward-feedback error" role="alert">{error}</p>}
-        {loading ? <p role="status">Đang tải sản phẩm...</p> : <div className="reward-product-grid">{products.map(product => <article className="reward-product" key={product.id}><div className="reward-product-image"><img src={product.thumbnailUrl} alt={product.name} /></div><div className="reward-product-info"><span className="number-label">{product.slug}</span><h3>{product.name}</h3><p>{product.description}</p><button className="button dark" disabled={!authenticated || points < 500} onClick={() => { setError(''); setSelectedProduct(product) }}>{points < 500 ? 'Cần đủ 500 điểm' : 'Đổi 500 điểm'} <Gift size={15} /></button></div></article>)}</div>}
+        {loading ? <p role="status">Đang tải sản phẩm...</p> : <div className="reward-product-grid">{products.map(product => <article className={'reward-product' + (canRedeem ? '' : ' dimmed')} key={product.id}>
+            <div className="reward-product-image"><img src={product.thumbnailUrl} alt={product.name} /><span className="reward-cost">500 điểm</span></div>
+            <div className="reward-product-info"><span className="number-label">{product.slug}</span><h3>{product.name}</h3><p>{product.description}</p><button className="button dark" disabled={!canRedeem} onClick={() => { setError(''); setSelectedProduct(product) }}>{!authenticated ? 'Đăng nhập để đổi' : points < POINTS_PER_LEVEL ? 'Chưa đủ điểm' : 'Đổi quà này'} <Gift size={15} /></button></div>
+        </article>)}</div>}
         {!authenticated && <p className="reward-login-note">Đăng nhập để xem số điểm và đổi quà. <Link to="/login" state={{ from: '/passport' }}>Đăng nhập</Link></p>}
-        {selectedProduct && <div className="reward-dialog-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget && !submitting) setSelectedProduct(undefined) }}><section className="reward-dialog" role="dialog" aria-modal="true" aria-labelledby="reward-dialog-title"><button type="button" className="icon-btn reward-dialog-close" aria-label="Đóng" disabled={submitting} onClick={() => setSelectedProduct(undefined)}><X size={17} /></button><p className="eyebrow">REDEEM / 500 POINTS</p><h2 id="reward-dialog-title">Nhận {selectedProduct.name}</h2><p>Đơn đổi quà trị giá 0đ sẽ được tạo và chuyển vào tiến trình giao hàng.</p>{error && <p className="reward-feedback error" role="alert">{error}</p>}<form className="reward-form" onSubmit={redeem}><label>HỌ VÀ TÊN<input name="customerName" required maxLength={150} placeholder="Nguyễn Minh Linh" /></label><label>SỐ ĐIỆN THOẠI<input name="phone" required maxLength={50} placeholder="09xx xxx xxx" /></label><label>ĐỊA CHỈ NHẬN QUÀ<textarea name="shippingAddress" required maxLength={1000} placeholder="Số nhà, đường, phường/xã, tỉnh/thành phố" /></label><button className="button dark" type="submit" disabled={submitting}>{submitting ? 'Đang đổi quà...' : 'Xác nhận đổi quà'} <Gift size={15} /></button></form></section></div>}
+        {selectedProduct && <div className="reward-dialog-backdrop" role="presentation" onMouseDown={event => { if (event.target === event.currentTarget && !submitting) setSelectedProduct(undefined) }}><section className="reward-dialog" role="dialog" aria-modal="true" aria-labelledby="reward-dialog-title"><button type="button" className="icon-btn reward-dialog-close" aria-label="Đóng" disabled={submitting} onClick={() => setSelectedProduct(undefined)}><X size={17} /></button><p className="eyebrow">Đổi 500 điểm</p><h2 id="reward-dialog-title">Nhận {selectedProduct.name}</h2><p>Đơn đổi quà trị giá 0đ sẽ được tạo và chuyển vào tiến trình giao hàng.</p>{error && <p className="reward-feedback error" role="alert">{error}</p>}<form className="reward-form" onSubmit={redeem}><label>HỌ VÀ TÊN<input name="customerName" required maxLength={150} placeholder="Nguyễn Minh Linh" /></label><label>SỐ ĐIỆN THOẠI<input name="phone" required maxLength={50} placeholder="09xx xxx xxx" /></label><label>ĐỊA CHỈ NHẬN QUÀ<textarea name="shippingAddress" required maxLength={1000} placeholder="Số nhà, đường, phường/xã, tỉnh/thành phố" /></label><button className="button dark" type="submit" disabled={submitting}>{submitting ? 'Đang đổi quà...' : 'Xác nhận đổi quà'} <Gift size={15} /></button></form></section></div>}
     </section>
 }
 function Cart({ items, updateQuantity, removeItem }: { items: CartItem[]; updateQuantity: (id: number, quantity: number) => void; removeItem: (id: number) => void }) {
@@ -212,7 +471,7 @@ function Checkout({ isAuthenticated, hasItems, onOrderComplete }: { isAuthentica
     }
     return <main className="page"><div className="section-wrap checkout"><p className="eyebrow">FINAL STEP / CHECKOUT</p>{sent ? <div className="order-success"><div className="success-icon"><Check /></div><h1>Đơn hàng đã<br /><em>được ghi nhận.</em></h1><p>Cảm ơn bạn đã chọn mang một phần miền Tây về nhà. Mã đơn hàng của bạn là <b>{order?.orderCode}</b>.</p><p>Thanh toán khi nhận hàng (COD). Vui lòng thanh toán với nhân viên giao hàng khi nhận kiện.</p><p>Passport sẽ cộng 100 điểm sau khi bạn xác nhận nhận hàng.</p><Link className="button dark" to="/orders">Theo dõi đơn hàng <ArrowRight size={16} /></Link></div> : order?.paymentMethod === 'PREPAID_QR' ? <div className="payment-pending"><p className="eyebrow">ORDER {order.orderCode}</p><h1>{paymentState === 'paid' ? <>Thanh toán<br /><em>thành công.</em></> : <>Quét mã để<br /><em>thanh toán.</em></>}</h1>{paymentState === 'waiting' ? <><p>Đơn hàng {order.orderCode} · {money(order.totalAmount)}</p><img className="checkout-payment-qr" src={getQrCodeUrl(`MEKONG STORY BOX|${order.orderCode}|${order.totalAmount}|VND`)} alt={`Mã QR thanh toán đơn ${order.orderCode}`} /><p>Đang chờ ngân hàng xác nhận mô phỏng. Trạng thái sẽ tự cập nhật sau 5 giây.</p>{paymentError && <><p role="alert">{paymentError}</p><button className="button dark" onClick={() => void retryPaymentConfirmation()}>Thử xác nhận lại <ArrowRight size={16} /></button></>}</> : <><div className="success-icon"><Check /></div><p>Đã xác nhận thanh toán {money(order.totalAmount)} cho đơn {order.orderCode}.</p><p>Đã cộng {order.passportPointsAwarded} điểm vào Digital Passport.</p><Link className="button dark" to="/orders">Theo dõi đơn hàng <ArrowRight size={16} /></Link></>}</div> : <><h1>Đưa câu chuyện<br /><em>về nhà.</em></h1>{!isAuthenticated && <p role="alert">Đăng nhập để đặt hàng và ghi nhận vào Digital Passport. <Link to="/login" state={{ from: '/checkout' }}>Đăng nhập</Link></p>}{!hasItems && <p role="alert">Giỏ hàng đang trống. <Link to="/products">Chọn sản phẩm</Link></p>}{error && <p role="alert">{error}</p>}<form className="checkout-form" onSubmit={submit}><label>HỌ VÀ TÊN<input name="customerName" required maxLength={150} placeholder="Nguyễn Minh Linh" /></label><label>SỐ ĐIỆN THOẠI<input name="phone" required maxLength={50} placeholder="09xx xxx xxx" /></label><label>ĐỊA CHỈ NHẬN HÀNG<textarea name="shippingAddress" required maxLength={1000} placeholder="Số nhà, đường, phường/xã, tỉnh/thành phố" /></label><fieldset className="payment-methods"><legend>PHƯƠNG THỨC THANH TOÁN</legend><label className="payment-method-option"><input type="radio" name="paymentMethod" value="PREPAID_QR" defaultChecked /><span><QrCode size={18} /><b>Chuyển khoản QR</b><small>Thanh toán trước khi giao hàng</small></span></label><label className="payment-method-option"><input type="radio" name="paymentMethod" value="COD" /><span><Package size={18} /><b>Thanh toán khi nhận hàng</b><small>Trả tiền trực tiếp khi nhận đơn</small></span></label></fieldset><button className="button dark" type="submit" disabled={!isAuthenticated || !hasItems || submitting}>{submitting ? 'Đang tạo đơn...' : 'Xác nhận đặt hàng'} <ArrowRight size={16} /></button></form></>}</div></main>
 }
-function About() { return <main className="page about"><div className="page-hero compact"><p className="eyebrow">OUR WHY</p><h1>Có một miền Tây<br /><em>luôn ở trong tim.</em></h1><p>Chúng tôi kể những câu chuyện văn hóa bằng ngôn ngữ của thế hệ hôm nay.</p></div><div className="section-wrap about-copy"><p className="large-copy">Mekong Story Box được bắt đầu bởi những người trẻ lớn lên bên dòng sông, nhưng đôi khi quên mất cách lắng nghe nó.</p><p>Chúng tôi tin rằng văn hóa không nằm yên trong bảo tàng. Văn hóa ở trong tiếng máy ghe lúc 5 giờ sáng, trong vị ngọt của trái dừa, trong những bàn tay khéo léo và trong cách một câu chuyện được truyền từ người này sang người khác.</p></div></main> }
+function About() { return <main className="page about"><div className="page-hero compact"><p className="eyebrow">OUR WHY</p><h1>Có một miền Tây<br /><em>luôn ở trong tim.</em></h1><p>Chúng tôi kể những câu chuyện văn hóa bằng ngôn ngữ của thế hệ hôm nay.</p></div><div className="section-wrap about-copy"><p className="large-copy">Mekong Story Box được bắt đầu bởi những người trẻ lớn lên bên dòng sông, nhưng đôi khi quên mất cách lắng nghe nó.</p><p>Chúng tôi tin rằng văn hóa không nằm yên trong bảo tàng. Văn hóa ở trong tiếng máy ghe lúc 5 giờ sáng, trong vị ngọt của trái dừa, trong những bàn tay khéo léo và trong cách một câu chuyện được truyền từ người này sang người khác.</p></div><section className="section-wrap about-values">{[[Leaf, 'Phù sa', 'Chọn nguyên liệu từ hộ sản xuất nhỏ, trả công xứng đáng cho người làm nghề.'], [Palmtree, 'Miệt vườn', 'Bao bì tre, lá dừa, lục bình — để chiếc hộp cũng là một món thủ công.'], [Heart, 'Thương nhớ', 'Mỗi hộp là một câu chuyện thật, kể bằng giọng của người miền Tây.']].map(([Icon, title, text]) => { const ValueIcon = Icon as typeof Leaf; return <article key={title as string}><ValueIcon size={24} /><h3>{title as string}</h3><p>{text as string}</p></article> })}</section><section className="section-wrap about-photo"><img src="/storybox_product.png" alt="Story Box trôi trên sông" /><p><em>“Văn hóa không nằm yên trong bảo tàng — nó trôi theo con nước.”</em></p></section></main> }
 function AuthPage({ mode, onAuthenticated }: { mode: 'login' | 'register'; onAuthenticated: (user: AuthUser) => void }) {
     const navigate = useNavigate()
     const location = useLocation()
@@ -312,7 +571,7 @@ export default function App() {
         <Route path="/stories" element={<Stories />} /><Route path="/stories/:id" element={<Stories />} />
         <Route path="/experience" element={<Experience />} /><Route path="/experience/demo" element={<DemoQrList />} />
         <Route path="/scan" element={<QrScanner />} /><Route path="/experience/qr/:token" element={<QRExperience />} />
-        <Route path="/passport" element={<Passport />} />
+        <Route path="/passport" element={<Passport user={user} />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/cart" element={<Cart items={cartItems} updateQuantity={updateCartQuantity} removeItem={removeFromCart} />} />
         <Route path="/checkout" element={<Checkout isAuthenticated={Boolean(user)} hasItems={cartItems.length > 0} onOrderComplete={placeOrder} />} /><Route path="/about" element={<About />} />
