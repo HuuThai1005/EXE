@@ -24,15 +24,15 @@ npm run dev
 
 Mở `http://localhost:5173`. API URL có thể đổi trong `.env` dựa trên `.env.example`.
 
-## Chạy SQL Server
+## Chạy PostgreSQL
 
-Tạo file `.env` từ `.env.example` và bổ sung mật khẩu SQL Server. Hoặc chạy:
+Tạo file `.env` từ `.env.example` và bổ sung `DB_PASSWORD`. Hoặc chạy:
 
 ```bash
-docker compose up -d sqlserver
+docker compose up -d postgres
 ```
 
-SQL Server dùng cổng `1433`. Database mặc định là `mekong_story_box`.
+PostgreSQL dùng cổng `5432`. Database mặc định là `mekong_story_box`.
 
 ## Chạy backend bằng Maven và JDK 21
 

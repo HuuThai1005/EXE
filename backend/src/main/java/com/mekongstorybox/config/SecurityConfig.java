@@ -1,6 +1,7 @@
 package com.mekongstorybox.config;
 
 import com.mekongstorybox.security.JwtAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -27,13 +28,13 @@ public class SecurityConfig {
     }
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, @Value("${cors.allowed-origins}") List<String> allowedOrigins) throws Exception {
 
         return http
                 .csrf(csrf -> csrf.disable())
 
                 .cors(cors ->
-                        cors.configurationSource(corsConfigurationSource())
+                        cors.configurationSource(corsConfigurationSource(allowedOrigins))
                 )
 
                 .sessionManagement(session ->
@@ -99,15 +100,12 @@ public class SecurityConfig {
     }
 
     @Bean
-    CorsConfigurationSource corsConfigurationSource() {
+    CorsConfigurationSource corsConfigurationSource(@Value("${cors.allowed-origins}") List<String> allowedOrigins) {
 
         var config = new CorsConfiguration();
 
         config.setAllowedOrigins(
-                List.of(
-                        "http://localhost:5173",
-                        "http://127.0.0.1:5173"
-                )
+                allowedOrigins
         );
 
         config.setAllowedMethods(
