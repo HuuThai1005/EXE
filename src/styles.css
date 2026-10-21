@@ -116,6 +116,7 @@ p { margin: 0; }
 .topbar.solid .nav a.active { background: var(--river); color: var(--paper); }
 .header-actions { display: flex; align-items: center; gap: 10px; }
 .topbar:not(.solid) .icon-btn { background: rgba(255, 255, 255, .14); border-color: rgba(255, 255, 255, .35); color: #fff; }
+.user-action.admin-link { background: var(--accent, #c9782b); color: #fff; border-color: transparent; }
 .user-action { font-size: .88rem; font-weight: 600; padding: 9px 16px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
 .cart-link span { position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; background: var(--lotus); color: #fff; font-size: .7rem; font-weight: 700; display: grid; place-items: center; }
 .menu-btn { display: none; color: inherit; }

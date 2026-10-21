@@ -77,6 +77,7 @@ function Shell({ children, cartCount, user, onLogout }: { children: React.ReactN
             </nav>
             <div className="header-actions">
                 <Link className="icon-btn scan-link" aria-label="Quét QR" to="/experience"><QrCode size={18} /></Link>
+                {user?.roles?.includes('ADMIN') && <Link className="user-action admin-link" to="/admin">Dashboard</Link>}
                 {user ? <button className="user-action" onClick={onLogout}>{user.fullName} · Thoát</button> : <Link className="user-action" to="/login">Đăng nhập</Link>}
                 <Link aria-label="Giỏ hàng" className="icon-btn cart-link" to="/cart"><ShoppingBag size={18} />{cartCount > 0 && <span>{cartCount}</span>}</Link>
                 <button className="menu-btn" aria-label="Menu" onClick={() => setOpen(!open)}>{open ? <X /> : <Menu />}</button>
