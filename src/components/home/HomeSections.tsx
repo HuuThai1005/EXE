@@ -179,8 +179,11 @@ export function CaDaoBand() {
     </section>
 }
 
-// Toạ độ (kinh độ, vĩ độ) gần đúng để vẽ bản đồ cách điệu đồng bằng sông Cửu Long
-const project = ([lon, lat]: number[]) => [(lon - 104.4) / 2.5 * 500, (11.1 - lat) / 2.6 * 520]
+// Toạ độ (kinh độ, vĩ độ) gần đúng để vẽ bản đồ cách điệu đồng bằng sông Cửu Long.
+// 200px cho mỗi độ; khung bắt đầu từ 103.7°E để có chỗ cho đảo Phú Quốc trong vịnh Thái Lan.
+const MAP_WIDTH = 640
+const MAP_HEIGHT = 520
+const project = ([lon, lat]: number[]) => [(lon - 103.7) * 200, (11.1 - lat) * 200]
 const toPath = (points: number[][], close = false) => points.map(project).map(([x, y], index) => `${index ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join('') + (close ? 'Z' : '')
 const toCurve = (points: number[][]) => {
     const p = points.map(project)
@@ -192,6 +195,13 @@ const toCurve = (points: number[][]) => {
     return d + ` L${p[p.length - 1][0].toFixed(1)} ${p[p.length - 1][1].toFixed(1)}`
 }
 const DELTA_LAND = toPath([[104.48, 10.39], [104.9, 10.55], [105.1, 10.95], [105.45, 10.98], [105.9, 10.96], [106.15, 11.03], [106.42, 10.96], [106.58, 10.76], [106.76, 10.6], [106.8, 10.38], [106.76, 10.12], [106.62, 9.86], [106.52, 9.62], [106.22, 9.42], [105.86, 9.18], [105.45, 8.9], [104.72, 8.6], [104.84, 8.98], [104.86, 9.32], [104.96, 9.62], [105.06, 9.86], [105.08, 10.01], [104.94, 10.15], [104.74, 10.26]], true)
+const PHU_QUOC = toPath([[103.93, 10.44], [104.03, 10.45], [104.07, 10.38], [104.05, 10.25], [104.06, 10.15], [104.02, 10.06], [103.99, 9.98], [103.96, 10.05], [103.97, 10.15], [103.95, 10.24], [103.9, 10.3], [103.84, 10.37], [103.88, 10.42]], true)
+const [phuQuocX, phuQuocY] = project([103.99, 9.98])
+// Tuyến tàu cao tốc Rạch Giá — Phú Quốc
+const FERRY = (() => {
+    const [x0, y0] = project([105.06, 10.0]), [x1, y1] = project([104.08, 10.12])
+    return `M${x0.toFixed(1)} ${y0.toFixed(1)} Q${((x0 + x1) / 2).toFixed(1)} ${(y0 + 36).toFixed(1)} ${x1.toFixed(1)} ${y1.toFixed(1)}`
+})()
 const RIVER_TIEN = toCurve([[105.3, 11.0], [105.24, 10.8], [105.38, 10.7], [105.63, 10.46], [105.78, 10.3], [105.97, 10.27], [106.2, 10.32], [106.4, 10.33], [106.62, 10.27], [106.82, 10.22]])
 const RIVER_HAU = toCurve([[105.0, 10.98], [105.12, 10.7], [105.3, 10.52], [105.43, 10.38], [105.6, 10.2], [105.78, 10.03], [105.96, 9.82], [106.14, 9.66], [106.34, 9.52]])
 const RIVER_COCHIEN = toCurve([[106.0, 10.24], [106.18, 10.06], [106.38, 9.92], [106.62, 9.74]])
@@ -200,7 +210,7 @@ const PLACES: Record<string, { at: [number, number]; label: 'left' | 'right' | '
     'Cần Thơ': { at: [105.78, 10.03], label: 'right' }, 'Bến Tre': { at: [106.37, 10.2], label: 'right' }, 'Vĩnh Long': { at: [105.97, 10.25], label: 'top' },
     'An Giang': { at: [105.43, 10.38], label: 'left' }, 'Đồng Tháp': { at: [105.63, 10.46], label: 'top' }, 'Sóc Trăng': { at: [105.97, 9.6], label: 'right' },
     'Tiền Giang': { at: [106.36, 10.4], label: 'right' }, 'Cà Mau': { at: [105.15, 9.18], label: 'left' }, 'Bạc Liêu': { at: [105.72, 9.29], label: 'right' },
-    'Kiên Giang': { at: [105.08, 10.01], label: 'left' }, 'Trà Vinh': { at: [106.34, 9.93], label: 'right' }, 'Hậu Giang': { at: [105.47, 9.78], label: 'left' }, 'Long An': { at: [106.41, 10.6], label: 'right' },
+    'Kiên Giang': { at: [105.08, 10.01], label: 'top' }, 'Trà Vinh': { at: [106.34, 9.93], label: 'right' }, 'Hậu Giang': { at: [105.47, 9.78], label: 'left' }, 'Long An': { at: [106.41, 10.6], label: 'right' },
 }
 const labelOffset = { left: [-11, 4, 'end'], right: [11, 4, 'start'], top: [0, -12, 'middle'], bottom: [0, 18, 'middle'] } as const
 
@@ -218,10 +228,13 @@ export function DeltaMap() {
                 </motion.ul>
             </div>
             <motion.div variants={fadeInUp} className="delta-map">
-                <svg viewBox="0 0 500 520" role="img" aria-label="Bản đồ cách điệu đồng bằng sông Cửu Long với 13 tỉnh thành">
-                    <text className="dm-sea" x="372" y="470">BIỂN ĐÔNG</text>
-                    <text className="dm-sea" x="18" y="372">VỊNH THÁI LAN</text>
+                <svg viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`} role="img" aria-label="Bản đồ cách điệu đồng bằng sông Cửu Long với 13 tỉnh thành và đảo Phú Quốc">
+                    <text className="dm-sea" x="530" y="470">BIỂN ĐÔNG</text>
+                    <text className="dm-sea" x="40" y="330">VỊNH THÁI LAN</text>
                     <motion.path className="dm-land" d={DELTA_LAND} initial={{ pathLength: 0, fillOpacity: 0 }} whileInView={{ pathLength: 1, fillOpacity: 1 }} viewport={{ once: true }} transition={{ duration: 2.2, ease: 'easeInOut' }} />
+                    <motion.path className="dm-ferry" d={FERRY} initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.8, delay: 2.2 }} />
+                    <motion.path className="dm-land island" d={PHU_QUOC} initial={{ pathLength: 0, fillOpacity: 0 }} whileInView={{ pathLength: 1, fillOpacity: 1 }} viewport={{ once: true }} transition={{ duration: 1.4, delay: 1.2, ease: 'easeInOut' }} />
+                    <motion.text className="dm-island" x={phuQuocX} y={phuQuocY + 18} textAnchor="middle" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.8, delay: 2 }}>Đảo Phú Quốc</motion.text>
                     {[RIVER_TIEN, RIVER_HAU, RIVER_COCHIEN, RIVER_HAMLUONG].map((d, index) => <motion.path key={index} className={'dm-river' + (index > 1 ? ' branch' : '')} d={d} initial={{ pathLength: 0 }} whileInView={{ pathLength: 1 }} viewport={{ once: true }} transition={{ duration: 1.8, delay: 0.6 + index * 0.25, ease: 'easeInOut' }} />)}
                     {provinces.map((name, index) => {
                         const place = PLACES[name]
@@ -235,7 +248,7 @@ export function DeltaMap() {
                         </motion.g>
                     })}
                 </svg>
-                <div className="dm-boat" style={{ left: `${project(PLACES['Cần Thơ'].at)[0] / 5}%`, top: `${project(PLACES['Cần Thơ'].at)[1] / 5.2}%` }}><XuongTop /></div>
+                <div className="dm-boat" style={{ left: `${project(PLACES['Cần Thơ'].at)[0] / MAP_WIDTH * 100}%`, top: `${project(PLACES['Cần Thơ'].at)[1] / MAP_HEIGHT * 100}%` }}><XuongTop /></div>
             </motion.div>
         </motion.div>
     </section>
