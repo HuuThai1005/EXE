@@ -5,7 +5,7 @@ MVP full-stack cho một Cultural Experience Platform: mỗi Story Box là một
 ## Đã có trong MVP
 
 - Frontend React + TypeScript + Vite, responsive mobile-first
-- Homepage, Story Box, Mekong Journal, QR Demo Journey, Digital Passport, Cart, Checkout và Admin overview
+- Homepage, Story Box, Mekong Journal, QR Journey, Digital Passport, Cart, Checkout và Admin overview
 - Đăng ký, đăng nhập, khôi phục phiên bằng JWT và đăng xuất
 - Passport khởi tạo rỗng; mỗi QR token hợp lệ chỉ cộng một lần khám phá cho từng user
 - Scanner QR dùng camera thật qua `html5-qrcode`; QR có thể chứa URL `/experience/qr/{token}` hoặc token trực tiếp
@@ -57,7 +57,7 @@ Flyway chạy migration khi ứng dụng khởi động. `spring.jpa.hibernate.d
 - QR: `POST /api/qr/verify` (authenticated, replay protection theo user/token)
 - Admin: `GET /api/admin/overview`, `POST /api/admin/products`, `POST /api/admin/stories`, `POST /api/admin/qr-tokens` (ADMIN role)
 
-Khi chạy trên điện thoại, camera yêu cầu HTTPS. `localhost` được trình duyệt cho phép trong môi trường phát triển. QR demo trong database nên trỏ tới `http://localhost:5173/experience/qr/demo-can-tho-001` khi test trên máy local.
+Khi chạy trên điện thoại, camera yêu cầu HTTPS. `localhost` được trình duyệt cho phép trong môi trường phát triển. Mã QR được tạo và in từ trang Admin › Quản lý mã QR; khi test trên máy local có thể mở trực tiếp `http://localhost:5173/experience/qr/<token>`.
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 - Demo QR token: `demo-can-tho-001`
 

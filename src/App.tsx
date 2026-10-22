@@ -18,7 +18,6 @@ type PaymentMethod = 'PREPAID_QR' | 'COD'
 type CheckoutDetails = { customerName: string; phone: string; shippingAddress: string; paymentMethod: PaymentMethod }
 type OrderResult = { id: number; orderCode: string; totalAmount: number; passportPointsAwarded: number; paymentMethod: PaymentMethod; paymentStatus: string }
 type ProductPage = { data: Product[]; page: number; size: number; totalPages: number; totalElements: number }
-type DemoQrToken = { token: string; label: string; location: string; description: string }
 const money = (value: number) => new Intl.NumberFormat('vi-VN').format(value) + 'đ'
 const getStories = () => api.get<{ data: Story[] }>('/stories').then(response => response.data.data)
 const getProducts = (page = 0, size = 6) => api.get<ProductPage>('/products', { params: { page, size } }).then(response => response.data)
@@ -31,12 +30,6 @@ const getAllProducts = async () => {
     return [...firstPage.data, ...remainingPages.flatMap(page => page.data)]
 }
 const getProduct = () => getProducts(0, 1).then(response => response.data[0])
-const demoQrTokens: DemoQrToken[] = [
-    { token: 'demo-can-tho-001', label: 'Cần Thơ #001', location: 'Floating Market', description: 'Chợ nổi lúc bình minh' },
-    { token: 'mekong-market-002', label: 'Bến Tre #002', location: 'Mekong Market', description: 'Mùi dừa và bến sông' },
-    { token: 'mekong-garden-003', label: 'Mekong Garden #003', location: 'Garden Trail', description: 'Bên vườn dừa xanh' },
-    { token: 'southern-music-004', label: 'Southern Music #004', location: 'River Stage', description: 'Giai điệu sông nước' },
-]
 const getQrCodeUrl = (token: string) => `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(token)}`
 const provinces = ['Cần Thơ', 'Bến Tre', 'Vĩnh Long', 'An Giang', 'Đồng Tháp', 'Sóc Trăng', 'Tiền Giang', 'Cà Mau', 'Bạc Liêu', 'Kiên Giang', 'Trà Vinh', 'Hậu Giang', 'Long An']
 const boxContents: [typeof Mail, string, string][] = [
@@ -223,7 +216,7 @@ function Home({ addToCart }: { addToCart: (product: Product) => void }) {
         <section className="passport-cta section-wrap">
             <div className="passport-cta-card">
                 <div><span className="mekong-label light">Digital Passport</span><h2>Mỗi con dấu<br /><em>là một bến sông.</em></h2><p>Quét mã QR trong hộp để mở khóa câu chuyện, nhận điểm và sưu tầm huy hiệu Chợ nổi, Miệt vườn, Đờn ca tài tử…</p></div>
-                <div className="passport-cta-actions"><button className="btn-mekong" onClick={() => navigate('/passport')}>Mở Passport <Compass size={18} /></button><button className="btn-mekong-outline" onClick={() => navigate('/experience/demo')}>Thử QR demo</button></div>
+                <div className="passport-cta-actions"><button className="btn-mekong" onClick={() => navigate('/passport')}>Mở Passport <Compass size={18} /></button><button className="btn-mekong-outline" onClick={() => navigate('/scan')}>Quét QR</button></div>
             </div>
         </section>
     </main>
@@ -245,12 +238,7 @@ function StoryBox({ addToCart }: { addToCart: (product: Product) => void }) {
     return <main className="page"><div className="page-hero"><p className="eyebrow">THE STORY BOX / COLLECTION</p><h1>Một miền sông nước<br /><em>để mang về.</em></h1><p>Đằng sau mỗi món quà là một vùng đất, một người làm ra nó, và một câu chuyện đáng được kể.</p></div><section className="section-wrap product-catalog"><div className="catalog-heading"><div><span className="number-label">ALL PRODUCTS</span><h2>Những hành trình<br /><em>đang chờ bạn.</em></h2></div><span>{products.length} sản phẩm</span></div>{loading ? <p role="status">Đang tải sản phẩm...</p> : error ? <p role="alert">Không thể tải danh sách sản phẩm. Vui lòng thử lại sau.</p> : products.length === 0 ? <p>Hiện chưa có sản phẩm nào.</p> : <div className="product-grid">{products.map(product => <article className="catalog-product" key={product.id}><div className="product-photo"><img src={resolveImageUrl(product.thumbnailUrl)} alt={product.name} /></div><div className="catalog-product-info"><span className="number-label">{product.slug}</span><h3>{product.name}</h3><p>{product.description}</p><div className="catalog-product-footer"><strong>{money(product.price)}</strong><button className="button dark" onClick={() => addProduct(product)}>{addedProductId === product.id ? 'Đã thêm' : 'Thêm vào giỏ'} <ShoppingBag size={16} /></button></div></div></article>)}</div>}</section></main>
 }
 function Stories() { const [stories, setStories] = useState<Story[]>([]); useEffect(() => { getStories().then(setStories).catch(() => setStories([])) }, []); return <main className="page"><div className="page-hero compact"><p className="eyebrow">THE MEKONG JOURNAL</p><h1>Những điều<br /><em>miền Tây kể.</em></h1><p>Chậm rãi một chút. Lắng nghe kỹ hơn. Mỗi câu chuyện là một cánh cửa nhỏ dẫn về miền sông nước.</p></div><section className="section-wrap journal"><div className="filters"><span>ALL STORIES</span>{['FOOD', 'PEOPLE', 'PLACES', 'CRAFTS', 'MUSIC', 'LIFESTYLE'].map(x => <button key={x}>{x}</button>)}</div><div className="journal-grid">{stories.map(story => <StoryCard story={story} key={story.id} />)}</div></section></main> }
-function Experience() { const navigate = useNavigate(); return <main className="experience"><div className="experience-card"><div className="qr-orbit"><QrCode size={54} /><span>SCAN</span></div><p className="eyebrow">YOUR DIGITAL JOURNEY</p><h1>Chiếc hộp chỉ là<br /><em>điểm bắt đầu.</em></h1><p>Quét mã QR trên thẻ Digital Passport để mở khóa câu chuyện đầu tiên của bạn.</p><div className="button-row"><button className="button primary" onClick={() => navigate('/scan')}><Camera size={17} /> Mở camera để scan QR <ArrowRight size={17} /></button><button className="text-button" onClick={() => navigate('/experience/demo')}><QrCode size={17} /> Xem QR demo</button></div><small>Camera permission required · HTTPS hoặc localhost</small></div></main> }
-
-function DemoQrList() {
-    const navigate = useNavigate();
-    return <main className="page"><div className="page-hero compact"><p className="eyebrow">QR DEMO / PASSPORT</p><h1>Danh sách QR<br /><em>để tích vào passport.</em></h1><p>Các mã dưới đây có thể quét bằng camera hoặc mở trực tiếp để thử nhanh luồng tích điểm vào Digital Passport.</p></div><section className="section-wrap"><div className="story-grid">{demoQrTokens.map(item => <article className="story-card" key={item.token}><div className="story-image"><img src={getQrCodeUrl(item.token)} alt={item.label} /></div><div className="story-card-body"><small>{item.location}</small><h3>{item.label}</h3><p>{item.description}</p><button className="button dark" onClick={() => navigate(`/experience/qr/${encodeURIComponent(item.token)}`)}>Quét mã này <ArrowRight size={17} /></button></div></article>)}</div></section></main>
-}
+function Experience() { const navigate = useNavigate(); return <main className="experience"><div className="experience-card"><div className="qr-orbit"><QrCode size={54} /><span>SCAN</span></div><p className="eyebrow">YOUR DIGITAL JOURNEY</p><h1>Chiếc hộp chỉ là<br /><em>điểm bắt đầu.</em></h1><p>Quét mã QR trên thẻ Digital Passport để mở khóa câu chuyện đầu tiên của bạn.</p><div className="button-row"><button className="button primary" onClick={() => navigate('/scan')}><Camera size={17} /> Mở camera để scan QR <ArrowRight size={17} /></button></div><small>Camera permission required · HTTPS hoặc localhost</small></div></main> }
 
 function QRExperience() { const [done, setDone] = useState(false); const [error, setError] = useState(''); const [loading, setLoading] = useState(false); const { token } = useParams(); const navigate = useNavigate(); const verify = async () => { setLoading(true); setError(''); try { const response = await api.post<{ data: { valid: boolean } }>('/qr/verify', { token }); if (response.data.data.valid) setDone(true); else setError('QR code không hợp lệ hoặc đã bị vô hiệu hóa.'); } catch (requestError: any) { setError(requestError.response?.status === 401 ? 'Vui lòng đăng nhập trước khi scan QR.' : 'QR code này chưa được kích hoạt hoặc không tồn tại.'); } finally { setLoading(false); } }; return <main className="experience qr-page"><div className="journey-card">{!done ? <><div className="success-icon"><QrCode size={31} /></div><p className="eyebrow">QR VERIFICATION / CẦN THƠ #001</p><h1>Your Mekong<br /><em>journey begins.</em></h1><p>Mã QR đã sẵn sàng mở ra một câu chuyện từ chợ nổi Cái Răng.</p>{error && <><p role="alert">{error}</p>{error.includes('đăng nhập') && <Link className="under-link" to="/login">Đăng nhập để tiếp tục <ArrowRight size={15} /></Link>}</>}<button className="button dark" onClick={verify} disabled={loading}>{loading ? 'Đang xác thực...' : 'Xác thực QR'} <Check size={17} /></button></> : <><div className="success-icon"><Check size={31} /></div><p className="eyebrow">EXPERIENCE UNLOCKED</p><h1>Chào mừng bạn<br /><em>về miền Tây.</em></h1><p>Lần khám phá đã được ghi vào Digital Passport của bạn.</p><div className="reward"><Stamp size={20} /><span>EXPERIENCE COUNTED</span><strong>+100 điểm</strong></div><button className="button dark" onClick={() => navigate('/passport')}>Mở Digital Passport <ArrowRight size={17} /></button></>}</div></main> }
 const POINTS_PER_LEVEL = 500
@@ -298,9 +286,7 @@ function Passport({ user }: { user?: AuthUser }) {
                     <p>Mỗi chiếc hộp là một bến đỗ. Quét mã QR để đóng dấu, tích điểm và lên hạng trên hải trình Cửu Long.</p>
                 </div>
                 <div className="pp-hero-actions">
-                    <button className="button dark" onClick={() => navigate('/scan')}><Camera size={17} /> Quét QR đóng dấu</button>
-                    <Link className="link-mekong" to="/experience/demo">Xem QR demo <ArrowRight size={16} /></Link>
-                </div>
+                    <button className="button dark" onClick={() => navigate('/scan')}><Camera size={17} /> Quét QR đóng dấu</button>                </div>
             </div>
         </section>
 
@@ -578,8 +564,7 @@ export default function App() {
         <Route path="/products" element={<StoryBox addToCart={addToCart} />} />
         <Route path="/story-box" element={<StoryBox addToCart={addToCart} />} />
         <Route path="/stories" element={<Stories />} /><Route path="/stories/:id" element={<Stories />} />
-        <Route path="/experience" element={<Experience />} /><Route path="/experience/demo" element={<DemoQrList />} />
-        <Route path="/scan" element={<QrScanner />} /><Route path="/experience/qr/:token" element={<QRExperience />} />
+        <Route path="/experience" element={<Experience />} />        <Route path="/scan" element={<QrScanner />} /><Route path="/experience/qr/:token" element={<QRExperience />} />
         <Route path="/passport" element={<Passport user={user} />} />
         <Route path="/orders" element={<Orders />} />
         <Route path="/cart" element={<Cart items={cartItems} updateQuantity={updateCartQuantity} removeItem={removeFromCart} />} />
