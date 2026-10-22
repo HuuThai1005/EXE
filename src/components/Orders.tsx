@@ -53,7 +53,7 @@ export default function Orders() {
             .finally(() => setLoading(false))
     }, [])
 
-    return <main className="page orders-page"><div className="section-wrap"><p className="eyebrow">YOUR JOURNEY / ORDERS</p><h1>Đơn hàng<br /><em>của bạn.</em></h1>
+    return <main className="page orders-page"><div className="section-wrap"><p className="eyebrow">Hành trình · Đơn hàng</p><h1>Đơn hàng<br /><em>của bạn.</em></h1>
         {loading && <p role="status">Đang tải đơn hàng...</p>}
         {error && <p role="alert">{error} <Link to="/login" state={{ from: '/orders' }}>Đăng nhập <ArrowRight size={14} /></Link></p>}
         {actionError && <p role="alert">{actionError}</p>}
