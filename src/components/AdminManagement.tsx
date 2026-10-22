@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Pencil, Save, Trash2 } from 'lucide-react'
-import { api } from '../services/api'
+import { api, resolveImageUrl } from '../services/api'
 import AdminSidebar from './AdminSidebar'
+import ImageUploadField from './ImageUploadField'
 
 type Mode = 'products' | 'stories' | 'qr'
 type Product = { id: number; name: string; slug: string; description: string; price: number; thumbnailUrl: string; status: string }
@@ -9,6 +10,7 @@ type Story = { id: number; title: string; slug: string; summary: string; categor
 type QrToken = { id: number; token: string; status: string; productId: number | null; productName: string | null }
 
 const labels: Record<Mode, string> = { products: 'Sản phẩm', stories: 'Stories', qr: 'Mã QR' }
+const endpoints: Record<Mode, string> = { products: '/admin/products', stories: '/admin/stories', qr: '/admin/qr-tokens' }
 const qrImage = (token: string) => `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(token)}`
 
 export default function AdminManagement({ mode }: { mode: Mode }) {
@@ -18,6 +20,7 @@ export default function AdminManagement({ mode }: { mode: Mode }) {
     const [editing, setEditing] = useState<Product | Story>()
     const [error, setError] = useState('')
     const [message, setMessage] = useState('')
+    const [uploading, setUploading] = useState(false)
 
     const load = async () => {
         setError('')
@@ -31,9 +34,14 @@ export default function AdminManagement({ mode }: { mode: Mode }) {
     useEffect(() => { setEditing(undefined); setMessage(''); load() }, [mode])
 
     const remove = async (id: number) => {
-        if (!window.confirm('Bạn có chắc muốn xóa mục này?')) return
+        const question = mode === 'qr'
+            ? 'Xóa mã QR này? Lịch sử quét của mã sẽ bị xóa (điểm người dùng đã nhận được giữ nguyên) và mã in trên bao bì sẽ không dùng được nữa.'
+            : 'Bạn có chắc muốn xóa mục này?'
+        if (!window.confirm(question)) return
+        setError('')
+        setMessage('')
         try {
-            await api.delete(`/admin/${mode}/${id}`)
+            await api.delete(`${endpoints[mode]}/${id}`)
             setMessage('Đã xóa thành công.')
             load()
         } catch (requestError: any) {
@@ -43,13 +51,14 @@ export default function AdminManagement({ mode }: { mode: Mode }) {
 
     const save = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
-        if (!editing) return
+        if (!editing || uploading) return
+        setError('')
         const form = Object.fromEntries(new FormData(event.currentTarget).entries())
         const payload = mode === 'products'
             ? { ...form, price: Number(form.price) }
             : { ...form, readingTime: Number(form.readingTime) }
         try {
-            await api.put(`/admin/${mode}/${editing.id}`, payload)
+            await api.put(`${endpoints[mode]}/${editing.id}`, payload)
             setMessage('Đã cập nhật thành công.')
             setEditing(undefined)
             load()
@@ -65,9 +74,9 @@ export default function AdminManagement({ mode }: { mode: Mode }) {
         {error && <p className="admin-message error" role="alert">{error}</p>}
         {editing && mode !== 'qr' && <form className="admin-form management-edit-form" onSubmit={save}>
             <div className="admin-form-heading"><h2>Sửa {mode === 'products' ? 'sản phẩm' : 'story'}</h2><button type="button" className="icon-btn" aria-label="Đóng" onClick={() => setEditing(undefined)}>×</button></div>
-            {mode === 'products' ? <><label>TÊN SẢN PHẨM<input name="name" required defaultValue={(editing as Product).name} /></label><div className="form-pair"><label>SLUG<input name="slug" required defaultValue={(editing as Product).slug} /></label><label>GIÁ<input name="price" type="number" min="1" required defaultValue={(editing as Product).price} /></label></div><label>MÔ TẢ<textarea name="description" defaultValue={(editing as Product).description || ''} /></label><label>ẢNH<input name="thumbnailUrl" type="url" defaultValue={(editing as Product).thumbnailUrl || ''} /></label></> : <><label>TIÊU ĐỀ<input name="title" required defaultValue={(editing as Story).title} /></label><div className="form-pair"><label>SLUG<input name="slug" required defaultValue={(editing as Story).slug} /></label><label>THỂ LOẠI<input name="category" required defaultValue={(editing as Story).category} /></label></div><label>TÓM TẮT<textarea name="summary" defaultValue={(editing as Story).summary || ''} /></label><div className="form-pair"><label>ẢNH COVER<input name="coverImage" type="url" defaultValue={(editing as Story).coverImage || ''} /></label><label>THỜI GIAN ĐỌC<input name="readingTime" type="number" min="1" required defaultValue={(editing as Story).readingTime} /></label></div></>}
-            <button className="button dark" type="submit"><Save size={16} /> Lưu thay đổi</button>
+            {mode === 'products' ? <><label>TÊN SẢN PHẨM<input name="name" required defaultValue={(editing as Product).name} /></label><div className="form-pair"><label>SLUG<input name="slug" required defaultValue={(editing as Product).slug} /></label><label>GIÁ<input name="price" type="number" min="1" required defaultValue={(editing as Product).price} /></label></div><label>MÔ TẢ<textarea name="description" defaultValue={(editing as Product).description || ''} /></label><ImageUploadField key={editing.id} name="thumbnailUrl" label="ẢNH SẢN PHẨM" defaultValue={(editing as Product).thumbnailUrl} onUploadingChange={setUploading} /></> : <><label>TIÊU ĐỀ<input name="title" required defaultValue={(editing as Story).title} /></label><div className="form-pair"><label>SLUG<input name="slug" required defaultValue={(editing as Story).slug} /></label><label>THỂ LOẠI<input name="category" required defaultValue={(editing as Story).category} /></label></div><label>TÓM TẮT<textarea name="summary" defaultValue={(editing as Story).summary || ''} /></label><div className="form-pair"><label>ẢNH COVER<input name="coverImage" type="url" defaultValue={(editing as Story).coverImage || ''} /></label><label>THỜI GIAN ĐỌC<input name="readingTime" type="number" min="1" required defaultValue={(editing as Story).readingTime} /></label></div></>}
+            <button className="button dark" type="submit" disabled={uploading}><Save size={16} /> {uploading ? 'Đang tải ảnh...' : 'Lưu thay đổi'}</button>
         </form>}
-        {mode === 'qr' ? <div className="management-table qr-management-table"><div className="management-row management-header"><span>ẢNH QR</span><span>MÃ TOKEN</span><span>SẢN PHẨM LIÊN KẾT</span><span>TRẠNG THÁI</span></div>{qrTokens.map(qr => <div className="management-row" key={qr.id}><img className="qr-preview" src={qrImage(qr.token)} alt={`QR ${qr.token}`} /><strong>{qr.token}</strong><span>{qr.productName || 'Chưa liên kết'}{qr.productId ? ` (#${qr.productId})` : ''}</span><span className="status-pill">{qr.status}</span></div>)}</div> : <div className="management-table">{(items as (Product | Story)[]).map(item => <div className="management-row" key={item.id}><div><strong>{'name' in item ? item.name : item.title}</strong><small>{item.slug}</small></div><span>{'name' in item ? `${item.price.toLocaleString('vi-VN')}đ` : item.category}</span><div className="management-actions"><button className="icon-btn" aria-label="Sửa" onClick={() => setEditing(item)}><Pencil size={16} /></button><button className="icon-btn danger" aria-label="Xóa" onClick={() => remove(item.id)}><Trash2 size={16} /></button></div></div>)}</div>}
+        {mode === 'qr' ? <div className="management-table qr-management-table"><div className="management-row management-header"><span>ẢNH QR</span><span>MÃ TOKEN</span><span>SẢN PHẨM LIÊN KẾT</span><span>TRẠNG THÁI</span><span /></div>{qrTokens.map(qr => <div className="management-row" key={qr.id}><img className="qr-preview" src={qrImage(qr.token)} alt={`QR ${qr.token}`} /><strong>{qr.token}</strong><span>{qr.productName || 'Chưa liên kết'}{qr.productId ? ` (#${qr.productId})` : ''}</span><span className="status-pill">{qr.status}</span><div className="management-actions"><button className="icon-btn danger" aria-label={`Xóa mã QR ${qr.token}`} onClick={() => remove(qr.id)}><Trash2 size={16} /></button></div></div>)}</div> : <div className="management-table">{(items as (Product | Story)[]).map(item => <div className="management-row" key={item.id}><div className="product-thumb">{'name' in item && <img src={resolveImageUrl(item.thumbnailUrl) || '/storybox_product.png'} alt="" onError={event => { event.currentTarget.src = '/storybox_product.png' }} />}<div><strong>{'name' in item ? item.name : item.title}</strong><small>{item.slug}</small></div></div><span>{'name' in item ? `${item.price.toLocaleString('vi-VN')}đ` : item.category}</span><div className="management-actions"><button className="icon-btn" aria-label="Sửa" onClick={() => setEditing(item)}><Pencil size={16} /></button><button className="icon-btn danger" aria-label="Xóa" onClick={() => remove(item.id)}><Trash2 size={16} /></button></div></div>)}</div>}
     </div></div></div></main>
 }

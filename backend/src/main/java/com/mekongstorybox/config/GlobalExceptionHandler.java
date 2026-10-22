@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.HashMap;
@@ -43,6 +45,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class, HandlerMethodValidationException.class})
     public ResponseEntity<Map<String, Object>> unreadable(Exception exception) {
         return body(HttpStatus.BAD_REQUEST, "Dữ liệu gửi lên không đúng định dạng.");
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, Object>> uploadTooLarge(MaxUploadSizeExceededException exception) {
+        return body(HttpStatus.PAYLOAD_TOO_LARGE, "Ảnh tối đa 5MB.");
+    }
+
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity<Map<String, Object>> invalidMultipart(MultipartException exception) {
+        return body(HttpStatus.BAD_REQUEST, "File tải lên không hợp lệ.");
     }
 
     @ExceptionHandler(ResponseStatusException.class)

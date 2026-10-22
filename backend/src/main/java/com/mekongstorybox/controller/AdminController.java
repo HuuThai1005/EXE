@@ -4,11 +4,14 @@ import com.mekongstorybox.entity.Product;
 import com.mekongstorybox.entity.QrToken;
 import com.mekongstorybox.entity.Story;
 import com.mekongstorybox.repository.ProductRepository;
+import com.mekongstorybox.repository.QrScanRepository;
 import com.mekongstorybox.repository.QrTokenRepository;
 import com.mekongstorybox.repository.StoryRepository;
+import com.mekongstorybox.service.ImageService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import org.springframework.http.HttpStatus;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
@@ -21,11 +24,15 @@ public class AdminController {
     private final ProductRepository products;
     private final StoryRepository stories;
     private final QrTokenRepository qrTokens;
+    private final QrScanRepository qrScans;
+    private final ImageService images;
 
-    public AdminController(ProductRepository products, StoryRepository stories, QrTokenRepository qrTokens) {
+    public AdminController(ProductRepository products, StoryRepository stories, QrTokenRepository qrTokens, QrScanRepository qrScans, ImageService images) {
         this.products = products;
         this.stories = stories;
         this.qrTokens = qrTokens;
+        this.qrScans = qrScans;
+        this.images = images;
     }
 
     @GetMapping("/overview")
@@ -94,22 +101,27 @@ public class AdminController {
         if (!product.getSlug().equalsIgnoreCase(slug) && products.existsBySlugIgnoreCase(slug)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Slug sản phẩm đã tồn tại.");
         }
+        var previousThumbnail = product.getThumbnailUrl();
         product.setName(request.name().trim());
         product.setSlug(slug);
         product.setDescription(request.description());
         product.setPrice(request.price());
         product.setThumbnailUrl(blankToNull(request.thumbnailUrl()));
-        return Map.of("success", true, "data", products.save(product).getId());
+        var savedId = products.save(product).getId();
+        if (previousThumbnail != null && !previousThumbnail.equals(product.getThumbnailUrl())) images.deleteIfUnused(previousThumbnail);
+        return Map.of("success", true, "data", savedId);
     }
 
     @DeleteMapping("/products/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteProduct(@PathVariable Long id) {
-        if (!products.existsById(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found");
-        if (qrTokens.existsByProduct_Id(id)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Không thể xóa sản phẩm đang được liên kết với mã QR.");
+        var product = products.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found"));
+        long linkedQrCodes = qrTokens.countByProduct_Id(id);
+        if (linkedQrCodes > 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Sản phẩm đang liên kết với " + linkedQrCodes + " mã QR. Hãy xóa các mã QR này trong mục Quản lý mã QR trước.");
         }
-        products.deleteById(id);
+        products.delete(product);
+        images.deleteIfUnused(product.getThumbnailUrl());
     }
 
     @GetMapping("/stories")
@@ -145,12 +157,22 @@ public class AdminController {
         return Map.of("success", true, "data", qrTokens.findAllWithProducts().stream().map(QrAdminResponse::from).toList());
     }
 
+    /** Xóa mã QR cùng lịch sử quét của nó. Điểm passport người dùng đã nhận được giữ nguyên. */
+    @DeleteMapping("/qr-tokens/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Transactional
+    public void deleteQrToken(@PathVariable Long id) {
+        if (!qrTokens.existsById(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy mã QR.");
+        qrScans.deleteAllByQrTokenId(id);
+        qrTokens.deleteById(id);
+    }
+
     // Giới hạn khớp với độ dài cột trong DB để lỗi được trả về 400 thay vì 500 từ PostgreSQL
     static final String SLUG_PATTERN = "^\\s*[A-Za-z0-9]+(-[A-Za-z0-9]+)*\\s*$";
     static final String SLUG_MESSAGE = "chỉ gồm chữ không dấu, số và dấu gạch ngang (vd. ben-tre-002)";
-    // Chỉ cho phép link http(s) để chặn javascript:/data: URL (stored XSS)
-    static final String HTTP_URL_PATTERN = "^\\s*(https?://\\S+)?\\s*$";
-    static final String HTTP_URL_MESSAGE = "phải là đường dẫn bắt đầu bằng http:// hoặc https://";
+    // Chỉ cho phép link http(s) hoặc ảnh đã upload (/api/images/{id}) để chặn javascript:/data: URL (stored XSS)
+    static final String HTTP_URL_PATTERN = "^\\s*(https?://\\S+|/api/images/[0-9a-fA-F-]{36})?\\s*$";
+    static final String HTTP_URL_MESSAGE = "phải là ảnh đã tải lên hoặc đường dẫn bắt đầu bằng http:// hoặc https://";
 
     public record ProductRequest(@NotBlank @Size(max = 255) String name,
                                  @NotBlank @Size(max = 255) @Pattern(regexp = SLUG_PATTERN, message = SLUG_MESSAGE) String slug,

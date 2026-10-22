@@ -11,7 +11,7 @@ public interface QrTokenRepository extends JpaRepository<QrToken, Long> {
 
 	long countByStatus(String status);
 
-	boolean existsByProduct_Id(Long productId);
+	long countByProduct_Id(Long productId);
 
 	@Query("select qr from QrToken qr left join fetch qr.product order by qr.id desc")
 	List<QrToken> findAllWithProducts();

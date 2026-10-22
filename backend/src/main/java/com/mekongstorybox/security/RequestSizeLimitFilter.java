@@ -22,21 +22,39 @@ import java.io.IOException;
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 5)
 public class RequestSizeLimitFilter extends OncePerRequestFilter {
-    private final long maxBodyBytes;
+    private static final String UPLOAD_PATH = "/api/admin/images";
 
-    public RequestSizeLimitFilter(@Value("${app.max-request-body-bytes:65536}") long maxBodyBytes) {
+    private final long maxBodyBytes;
+    private final long maxUploadBytes;
+
+    public RequestSizeLimitFilter(@Value("${app.max-request-body-bytes:65536}") long maxBodyBytes,
+                                  @Value("${app.max-upload-request-bytes:6291456}") long maxUploadBytes) {
         this.maxBodyBytes = maxBodyBytes;
+        this.maxUploadBytes = maxUploadBytes;
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
+        // Upload ảnh được phép lớn hơn; phần multipart do spring.servlet.multipart.* giới hạn
+        if (UPLOAD_PATH.equals(request.getRequestURI())) {
+            if (request.getContentLengthLong() > maxUploadBytes) {
+                writeTooLarge(response, "Ảnh tối đa 5MB.");
+                return;
+            }
+            chain.doFilter(request, response);
+            return;
+        }
         if (request.getContentLengthLong() > maxBodyBytes) {
-            response.setStatus(HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE);
-            response.setContentType("application/json;charset=UTF-8");
-            response.getWriter().write("{\"success\":false,\"data\":null,\"status\":413,\"message\":\"Dữ liệu gửi lên quá lớn.\"}");
+            writeTooLarge(response, "Dữ liệu gửi lên quá lớn.");
             return;
         }
         chain.doFilter(new LimitedRequest(request, maxBodyBytes), response);
+    }
+
+    private static void writeTooLarge(HttpServletResponse response, String message) throws IOException {
+        response.setStatus(HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE);
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write("{\"success\":false,\"data\":null,\"status\":413,\"message\":\"" + message + "\"}");
     }
 
     private static final class LimitedRequest extends HttpServletRequestWrapper {

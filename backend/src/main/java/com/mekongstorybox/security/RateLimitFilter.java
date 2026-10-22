@@ -38,6 +38,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
             new Rule("qr", "POST", "/api/qr/verify", 20),
             new Rule("order", "POST", "/api/orders", 20),
             new Rule("redeem", "POST", "/api/passport/redemptions", 10),
+            new Rule("upload", "POST", "/api/admin/images", 30),
             new Rule("api", null, "/api/", 300)
     );
 

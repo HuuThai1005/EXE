@@ -15,6 +15,11 @@ spring:
   transaction:
     # Transaction (kể cả đang chờ khóa SELECT ... FOR UPDATE) bị hủy sau 10s để không giữ kết nối mãi
     default-timeout: 10s
+  servlet:
+    multipart:
+      # Upload ảnh sản phẩm: tối đa 5MB/ảnh
+      max-file-size: 5MB
+      max-request-size: 6MB
   flyway:
     enabled: true
     locations: classpath:db/migration
