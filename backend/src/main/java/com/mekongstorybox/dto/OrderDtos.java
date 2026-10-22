@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
@@ -16,17 +17,20 @@ import java.util.List;
 public final class OrderDtos {
     private OrderDtos() {}
 
+    /** Số điện thoại: chữ số, khoảng trắng, dấu + ( ) . - ; dài 8-20 ký tự. */
+    public static final String PHONE_PATTERN = "^\\s*[0-9+()\\s.-]{8,20}\\s*$";
+
     public record CreateOrderRequest(
             @NotBlank @Size(max = 150) String customerName,
-            @NotBlank @Size(max = 50) String phone,
+            @NotBlank @Size(max = 50) @Pattern(regexp = PHONE_PATTERN, message = "Số điện thoại không hợp lệ") String phone,
             @NotBlank @Size(max = 1000) String shippingAddress,
-            @NotBlank String paymentMethod,
-            @NotEmpty @Valid List<OrderItemRequest> items) {}
+            @NotBlank @Size(max = 20) String paymentMethod,
+            @NotEmpty @Size(max = 20) @Valid List<@NotNull OrderItemRequest> items) {}
 
     public record RedeemProductRequest(
             @NotNull @Positive Long productId,
             @NotBlank @Size(max = 150) String customerName,
-            @NotBlank @Size(max = 50) String phone,
+            @NotBlank @Size(max = 50) @Pattern(regexp = PHONE_PATTERN, message = "Số điện thoại không hợp lệ") String phone,
             @NotBlank @Size(max = 1000) String shippingAddress) {}
 
     public record OrderItemRequest(
@@ -49,7 +53,7 @@ public final class OrderDtos {
                                                                          String phone, String shippingAddress, String shippingCarrier,
                                                                          String trackingNumber, String paymentMethod, String paymentStatus, BigDecimal totalAmount,
                                                                          String status, LocalDateTime createdAt) {}
-        public record UpdateOrderStatusRequest(@NotBlank String status,
+        public record UpdateOrderStatusRequest(@NotBlank @Size(max = 30) String status,
                                                @Size(max = 100) String shippingCarrier,
                                                @Size(max = 100) String trackingNumber) {}
 }

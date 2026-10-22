@@ -33,6 +33,16 @@ public class PassportService {
         return passport;
     }
 
+    /** Thu hồi điểm đã cộng (vd. đơn đã thanh toán bị hủy); không để điểm âm. */
+    @Transactional
+    public DigitalPassport revokePoints(User user, int points) {
+        var passport = passports.findByUserIdForUpdate(user.getId())
+                .orElseGet(() -> passports.save(new DigitalPassport(user)));
+        int revocable = Math.min(points, passport.getTotalPoints());
+        if (revocable > 0) passport.spendPoints(revocable);
+        return passport;
+    }
+
     @Transactional
     public DigitalPassport refundPoints(User user, int points) {
         var passport = passports.findByUserIdForUpdate(user.getId())

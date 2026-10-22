@@ -2,6 +2,7 @@ package com.mekongstorybox.controller;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
@@ -20,5 +21,5 @@ public class QrController {
         return Map.of("success", result.valid(), "data", Map.of("valid", result.valid(), "counted", result.counted()), "message", result.message());
     }
 
-    public record VerifyRequest(@NotBlank String token) {}
+    public record VerifyRequest(@NotBlank @Size(max = 255) String token) {}
 }

@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -14,17 +15,24 @@ import java.io.IOException;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+    private static final int MAX_TOKEN_LENGTH = 4096;
+
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
     public JwtAuthenticationFilter(JwtService jwtService, UserDetailsService userDetailsService) { this.jwtService = jwtService; this.userDetailsService = userDetailsService; }
     @Override protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws ServletException, IOException {
         String header = request.getHeader("Authorization");
-        if (header != null && header.startsWith("Bearer ") && SecurityContextHolder.getContext().getAuthentication() == null) {
-            String token = header.substring(7);
-            if (jwtService.isValid(token)) { var details = userDetailsService.loadUserByUsername(jwtService.email(token)); var authentication = new UsernamePasswordAuthenticationToken(details, null, details.getAuthorities()); authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request)); SecurityContextHolder.getContext().setAuthentication(authentication);
-                System.out.println("USER: " + details.getUsername());
-                System.out.println("AUTHORITIES: " + details.getAuthorities());
-                System.out.println("REQUEST: " + request.getMethod() + " " + request.getRequestURI());}
+        if (header != null && header.startsWith("Bearer ") && header.length() <= MAX_TOKEN_LENGTH && SecurityContextHolder.getContext().getAuthentication() == null) {
+            jwtService.validEmail(header.substring(7)).ifPresent(email -> {
+                try {
+                    var details = userDetailsService.loadUserByUsername(email);
+                    var authentication = new UsernamePasswordAuthenticationToken(details, null, details.getAuthorities());
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                } catch (UsernameNotFoundException ignored) {
+                    // Token hợp lệ nhưng tài khoản đã bị xóa: coi như chưa đăng nhập
+                }
+            });
         }
         chain.doFilter(request, response);
     }

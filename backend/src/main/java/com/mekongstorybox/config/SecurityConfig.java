@@ -1,6 +1,7 @@
 package com.mekongstorybox.config;
 
 import com.mekongstorybox.security.JwtAuthenticationFilter;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,6 +17,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.io.IOException;
 import java.util.List;
 
 @Configuration
@@ -79,12 +81,26 @@ public class SecurityConfig {
                         .authenticated()
                 )
 
+                // Phân biệt rõ: chưa đăng nhập / token hết hạn -> 401, đã đăng nhập nhưng thiếu quyền -> 403
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, exception) ->
+                                writeError(response, HttpServletResponse.SC_UNAUTHORIZED, "Vui lòng đăng nhập để tiếp tục."))
+                        .accessDeniedHandler((request, response, exception) ->
+                                writeError(response, HttpServletResponse.SC_FORBIDDEN, "Tài khoản không có quyền thực hiện thao tác này."))
+                )
+
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class
                 )
 
                 .build();
+    }
+
+    private static void writeError(HttpServletResponse response, int status, String message) throws IOException {
+        response.setStatus(status);
+        response.setContentType("application/json;charset=UTF-8");
+        response.getWriter().write("{\"success\":false,\"data\":null,\"status\":" + status + ",\"message\":\"" + message + "\"}");
     }
 
     @Bean

@@ -17,6 +17,7 @@ import com.mekongstorybox.repository.CustomerOrderRepository;
 import com.mekongstorybox.repository.CustomerOrderStatusHistoryRepository;
 import com.mekongstorybox.repository.ProductRepository;
 import com.mekongstorybox.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,13 +43,16 @@ public class OrderService {
     private final ProductRepository products;
     private final UserRepository users;
     private final PassportService passports;
+    private final boolean paymentSimulationEnabled;
 
-    public OrderService(CustomerOrderRepository orders, CustomerOrderStatusHistoryRepository statusHistory, ProductRepository products, UserRepository users, PassportService passports) {
+    public OrderService(CustomerOrderRepository orders, CustomerOrderStatusHistoryRepository statusHistory, ProductRepository products, UserRepository users, PassportService passports,
+                        @Value("${app.payment.simulation-enabled:true}") boolean paymentSimulationEnabled) {
         this.orders = orders;
         this.statusHistory = statusHistory;
         this.products = products;
         this.users = users;
         this.passports = passports;
+        this.paymentSimulationEnabled = paymentSimulationEnabled;
     }
 
     @Transactional
@@ -113,6 +117,10 @@ public class OrderService {
 
     @Transactional
     public PaymentResponse simulateQrPayment(String email, Long orderId) {
+        // Endpoint giả lập cho phép khách tự đánh dấu "đã thanh toán" -> phải tắt khi chạy thật
+        if (!paymentSimulationEnabled) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Thanh toán giả lập đã bị tắt trên hệ thống này.");
+        }
         var user = users.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Vui lòng đăng nhập."));
         var order = orders.findByIdForUpdate(orderId)
@@ -175,6 +183,10 @@ public class OrderService {
             statusHistory.save(new CustomerOrderStatusHistory(order, nextStatus, note));
             if ("CANCELLED".equals(nextStatus) && "REDEMPTION".equals(order.getOrderType())) {
                 passports.refundPoints(order.getUser(), order.getPassportPointsSpent());
+            }
+            // Đơn mua đã thanh toán (và đã được cộng điểm) bị hủy -> thu hồi điểm để không bị trục lợi
+            if ("CANCELLED".equals(nextStatus) && "PURCHASE".equals(order.getOrderType()) && "PAID".equals(order.getPaymentStatus())) {
+                passports.revokePoints(order.getUser(), ORDER_PASSPORT_POINTS);
             }
         }
         return toAdminOrder(order);
