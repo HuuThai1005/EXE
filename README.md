@@ -7,7 +7,7 @@ MVP full-stack cho một Cultural Experience Platform: mỗi Story Box là một
 - Frontend React + TypeScript + Vite, responsive mobile-first
 - Homepage, Story Box, Mekong Journal, QR Journey, Digital Passport, Cart, Checkout và Admin overview
 - Đăng ký, đăng nhập, khôi phục phiên bằng JWT và đăng xuất
-- Passport khởi tạo rỗng; mỗi QR token hợp lệ chỉ cộng một lần khám phá cho từng user
+- Passport khởi tạo rỗng; mỗi mã QR là token ngẫu nhiên dùng một lần (ACTIVE → USED, hoặc REVOKED khi admin thu hồi): người quét đầu tiên được cộng điểm, mọi lượt quét lại đều bị từ chối
 - Scanner QR dùng camera thật qua `html5-qrcode`; QR có thể chứa URL `/experience/qr/{token}` hoặc token trực tiếp
 - Backend Spring Boot 3 / Java 21 với REST health endpoint, stateless security, BCrypt, CORS, OpenAPI dependency và Flyway
 - Microsoft SQL Server schema cho users, roles, products, locations, stories, passports và QR tokens
@@ -54,8 +54,9 @@ Flyway chạy migration khi ứng dụng khởi động. `spring.jpa.hibernate.d
 - Health: `GET http://localhost:8080/api/health`
 - Auth: `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout`
 - Passport: `GET /api/passport` (authenticated)
-- QR: `POST /api/qr/verify` (authenticated, replay protection theo user/token)
-- Admin: `GET /api/admin/overview`, `POST /api/admin/products`, `POST /api/admin/stories`, `POST /api/admin/qr-tokens` (ADMIN role)
+- QR: `POST /api/qr/verify` (authenticated; khóa dòng token khi quét nên mỗi mã chỉ được dùng đúng một lần, kể cả khi quét đồng thời)
+- Admin: `GET /api/admin/overview`, `POST /api/admin/products`, `POST /api/admin/stories` (ADMIN role)
+- Admin QR: `POST /api/admin/qr-tokens` với `{ productId, quantity }` (1–200) phát hành một lô mã ngẫu nhiên cho sản phẩm, `POST /api/admin/qr-tokens/{id}/revoke` thu hồi mã chưa quét
 
 Khi chạy trên điện thoại, camera yêu cầu HTTPS. `localhost` được trình duyệt cho phép trong môi trường phát triển. Mã QR được tạo và in từ trang Admin › Quản lý mã QR; khi test trên máy local có thể mở trực tiếp `http://localhost:5173/experience/qr/<token>`.
 - Swagger UI: `http://localhost:8080/swagger-ui.html`

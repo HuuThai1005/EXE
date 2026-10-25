@@ -15,6 +15,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -37,7 +41,7 @@ public class AdminController {
 
     @GetMapping("/overview")
     public Map<String, Object> overview() {
-        return Map.of("products", products.count(), "stories", stories.count(), "qrTokens", qrTokens.count(), "activeQrTokens", qrTokens.countByStatus("ACTIVE"));
+        return Map.of("products", products.count(), "stories", stories.count(), "qrTokens", qrTokens.count(), "activeQrTokens", qrTokens.countByStatus(QrToken.ACTIVE));
     }
 
     private static String blankToNull(String value) {
@@ -74,19 +78,28 @@ public class AdminController {
         return Map.of("success", true, "data", stories.save(story).getId());
     }
 
+    /** Phát hành một lô mã QR dùng một lần cho sản phẩm (mỗi hộp in một mã). Token do server sinh ngẫu nhiên nên không đoán được. */
     @PostMapping("/qr-tokens")
     @ResponseStatus(HttpStatus.CREATED)
-    public Map<String, Object> createQrToken(@Valid @RequestBody QrRequest request) {
-        var token = request.token().trim();
-        if (qrTokens.findByToken(token).isPresent()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Mã QR đã tồn tại. Hãy chọn token khác.");
-        }
+    @Transactional
+    public Map<String, Object> createQrTokens(@Valid @RequestBody QrRequest request) {
         var product = products.findById(request.productId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Không tìm thấy sản phẩm với ID đã nhập."));
-        var qr = new QrToken();
-        qr.setToken(token);
-        qr.setStatus("ACTIVE");
-        qr.setProduct(product);
-        return Map.of("success", true, "data", qrTokens.save(qr).getId());
+        var batch = new ArrayList<QrToken>();
+        for (int i = 0; i < request.quantity(); i++) {
+            var qr = new QrToken();
+            qr.setToken(randomQrToken());
+            qr.setStatus(QrToken.ACTIVE);
+            qr.setProduct(product);
+            batch.add(qr);
+        }
+        return Map.of("success", true, "data", qrTokens.saveAll(batch).stream().map(QrAdminResponse::from).toList());
+    }
+
+    /** 128 bit ngẫu nhiên, mã hóa base64url (22 ký tự) để nằm gọn trong QR và URL. */
+    static String randomQrToken() {
+        var bytes = new byte[16];
+        SECURE_RANDOM.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     @GetMapping("/products")
@@ -157,6 +170,17 @@ public class AdminController {
         return Map.of("success", true, "data", qrTokens.findAllWithProducts().stream().map(QrAdminResponse::from).toList());
     }
 
+    /** Thu hồi mã chưa quét (vd. bao bì in lỗi, thất lạc): mã chuyển REVOKED, không quét được nữa nhưng vẫn giữ lịch sử. */
+    @PostMapping("/qr-tokens/{id}/revoke")
+    @Transactional
+    public Map<String, Object> revokeQrToken(@PathVariable Long id) {
+        if (qrTokens.revokeIfActive(id) == 0) {
+            if (!qrTokens.existsById(id)) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Không tìm thấy mã QR.");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Chỉ thu hồi được mã chưa được quét.");
+        }
+        return Map.of("success", true, "data", id);
+    }
+
     /** Xóa mã QR cùng lịch sử quét của nó. Điểm passport người dùng đã nhận được giữ nguyên. */
     @DeleteMapping("/qr-tokens/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -173,6 +197,8 @@ public class AdminController {
     // Chỉ cho phép link http(s) hoặc ảnh đã upload (/api/images/{id}) để chặn javascript:/data: URL (stored XSS)
     static final String HTTP_URL_PATTERN = "^\\s*(https?://\\S+|/api/images/[0-9a-fA-F-]{36})?\\s*$";
     static final String HTTP_URL_MESSAGE = "phải là ảnh đã tải lên hoặc đường dẫn bắt đầu bằng http:// hoặc https://";
+    static final int MAX_QR_BATCH = 200;
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     public record ProductRequest(@NotBlank @Size(max = 255) String name,
                                  @NotBlank @Size(max = 255) @Pattern(regexp = SLUG_PATTERN, message = SLUG_MESSAGE) String slug,
@@ -185,9 +211,9 @@ public class AdminController {
                                @NotBlank @Size(max = 50) String category,
                                @Size(max = 500) @Pattern(regexp = HTTP_URL_PATTERN, message = HTTP_URL_MESSAGE) String coverImage,
                                @NotNull @Positive @Max(600) Integer readingTime) {}
-    public record QrRequest(@NotBlank @Size(max = 255) @Pattern(regexp = "^\\s*[A-Za-z0-9._~-]+\\s*$", message = "chỉ gồm chữ không dấu, số và các ký tự . _ ~ -") String token,
-                            @NotNull @Positive Long productId) {}
+    public record QrRequest(@NotNull @Positive Long productId,
+                            @NotNull @Min(1) @Max(MAX_QR_BATCH) Integer quantity) {}
     record ProductAdminResponse(Long id, String name, String slug, String description, BigDecimal price, String thumbnailUrl, String status) { static ProductAdminResponse from(Product item) { return new ProductAdminResponse(item.getId(), item.getName(), item.getSlug(), item.getDescription(), item.getPrice(), item.getThumbnailUrl(), item.getStatus()); } }
     record StoryAdminResponse(Long id, String title, String slug, String summary, String category, String coverImage, Integer readingTime) { static StoryAdminResponse from(Story item) { return new StoryAdminResponse(item.getId(), item.getTitle(), item.getSlug(), item.getSummary(), item.getCategory(), item.getCoverImage(), item.getReadingTime()); } }
-    record QrAdminResponse(Long id, String token, String status, Long productId, String productName) { static QrAdminResponse from(QrToken item) { var product = item.getProduct(); return new QrAdminResponse(item.getId(), item.getToken(), item.getStatus(), product == null ? null : product.getId(), product == null ? null : product.getName()); } }
+    record QrAdminResponse(Long id, String token, String status, LocalDateTime usedAt, Long productId, String productName) { static QrAdminResponse from(QrToken item) { var product = item.getProduct(); return new QrAdminResponse(item.getId(), item.getToken(), item.getStatus(), item.getUsedAt(), product == null ? null : product.getId(), product == null ? null : product.getName()); } }
 }
