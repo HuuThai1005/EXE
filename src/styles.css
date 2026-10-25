@@ -753,6 +753,9 @@ textarea { min-height: 110px; resize: vertical; }
 .auth-card .button { margin-top: 6px; }
 .auth-switch { margin-top: 22px; text-align: center; color: var(--ink-soft); }
 .auth-switch a { color: var(--sun); font-weight: 700; }
+.google-signin { display: flex; justify-content: center; min-height: 44px; }
+.auth-divider { display: flex; align-items: center; gap: 12px; margin: 22px 0; color: var(--ink-soft); font-size: .85rem; }
+.auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: var(--line-strong); }
 
 /* cart */
 .cart-page .section-wrap { padding-top: 50px; }

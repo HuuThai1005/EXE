@@ -52,7 +52,7 @@ docker compose up --build backend
 Flyway chạy migration khi ứng dụng khởi động. `spring.jpa.hibernate.ddl-auto` được đặt là `validate`, không dùng Hibernate để tự tạo schema.
 
 - Health: `GET http://localhost:8080/api/health`
-- Auth: `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/logout`
+- Auth: `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/google` (`{ credential }` là ID token Google), `GET /api/auth/me`, `POST /api/auth/logout`
 - Passport: `GET /api/passport` (authenticated)
 - QR: `POST /api/qr/verify` (authenticated; khóa dòng token khi quét nên mỗi mã chỉ được dùng đúng một lần, kể cả khi quét đồng thời)
 - Admin: `GET /api/admin/overview`, `POST /api/admin/products`, `POST /api/admin/stories` (ADMIN role)
@@ -61,6 +61,16 @@ Flyway chạy migration khi ứng dụng khởi động. `spring.jpa.hibernate.d
 Khi chạy trên điện thoại, camera yêu cầu HTTPS. `localhost` được trình duyệt cho phép trong môi trường phát triển. Mã QR được tạo và in từ trang Admin › Quản lý mã QR; khi test trên máy local có thể mở trực tiếp `http://localhost:5173/experience/qr/<token>`.
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 - Demo QR token: `demo-can-tho-001`
+
+## Đăng nhập bằng Google
+
+1. Vào Google Cloud Console › APIs & Services › Credentials, tạo **OAuth client ID** loại **Web application**.
+2. Ở **Authorized JavaScript origins**, thêm `http://localhost`, `http://localhost:5173` và domain thật của frontend (vd. domain ngrok). Không cần redirect URI.
+3. Đặt cùng một Client ID cho cả hai phía:
+   - Frontend: `VITE_GOOGLE_CLIENT_ID` trong `.env` (khởi động lại `npm run dev` sau khi sửa).
+   - Backend: biến môi trường `GOOGLE_CLIENT_ID` (Docker Compose tự lấy từ `.env`).
+
+Frontend nhận ID token từ Google Identity Services và gửi lên `POST /api/auth/google`; backend kiểm tra chữ ký, issuer, audience, hạn dùng và `email_verified`. Email đã có tài khoản thì đăng nhập vào tài khoản đó, chưa có thì tự tạo tài khoản USER. Khi chưa cấu hình `VITE_GOOGLE_CLIENT_ID`, nút Google được ẩn.
 
 ## Kiến trúc
 

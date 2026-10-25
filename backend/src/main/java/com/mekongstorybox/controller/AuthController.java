@@ -22,6 +22,9 @@ public class AuthController {
     @PostMapping("/login")
     public Map<String, Object> login(@Valid @RequestBody LoginRequest request) { return success(authService.login(request), "Login successful"); }
 
+    @PostMapping("/google")
+    public Map<String, Object> google(@Valid @RequestBody GoogleLoginRequest request) { return success(authService.loginWithGoogle(request), "Login successful"); }
+
     @GetMapping("/me")
     public Map<String, Object> me(Authentication authentication) { return success(authService.me(authentication.getName()), "Success"); }
 

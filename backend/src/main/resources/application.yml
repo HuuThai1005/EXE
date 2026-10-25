@@ -57,4 +57,7 @@ app:
     simulation-enabled: ${PAYMENT_SIMULATION_ENABLED:true}
   rate-limit:
     enabled: ${RATE_LIMIT_ENABLED:true}
+  google:
+    # OAuth Client ID loại "Web application" trong Google Cloud Console (phải trùng VITE_GOOGLE_CLIENT_ID của frontend). Để trống thì tắt đăng nhập Google.
+    client-id: ${GOOGLE_CLIENT_ID:}
   max-request-body-bytes: 65536

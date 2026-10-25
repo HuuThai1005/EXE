@@ -83,7 +83,7 @@ public class AdminController {
     @ResponseStatus(HttpStatus.CREATED)
     @Transactional
     public Map<String, Object> createQrTokens(@Valid @RequestBody QrRequest request) {
-        var product = products.findById(request.productId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Không tìm thấy sản phẩm với ID đã nhập."));
+        var product = products.findById(request.productId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Không tìm thấy sản phẩm đã chọn."));
         var batch = new ArrayList<QrToken>();
         for (int i = 0; i < request.quantity(); i++) {
             var qr = new QrToken();
